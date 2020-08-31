@@ -20,7 +20,7 @@ from tools import checkpoint_utils, distributed_utils, utils
 import models
 import optim
 from tools.file_io import PathManager
-from logging import meters, metrics
+from loggings import meters, metrics
 from tools.nan_detector import NanDetector
 from optim import lr_scheduler
 

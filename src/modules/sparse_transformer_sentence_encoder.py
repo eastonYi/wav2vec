@@ -4,8 +4,8 @@
 # LICENSE file in the root directory of this source tree.
 
 import torch.nn as nn
-from fairseq.modules import TransformerSentenceEncoder
-from fairseq.modules.sparse_transformer_sentence_encoder_layer import SparseTransformerSentenceEncoderLayer
+from modules import TransformerSentenceEncoder
+from modules.sparse_transformer_sentence_encoder_layer import SparseTransformerSentenceEncoderLayer
 
 
 class SparseTransformerSentenceEncoder(TransformerSentenceEncoder):

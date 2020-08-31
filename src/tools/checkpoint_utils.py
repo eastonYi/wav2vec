@@ -13,7 +13,7 @@ from typing import Union
 
 import torch
 from fairseq.file_io import PathManager
-from fairseq.models import FairseqDecoder, FairseqEncoder
+from models import FairseqDecoder, FairseqEncoder
 from torch.serialization import default_restore_location
 
 

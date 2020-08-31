@@ -6,7 +6,7 @@
 import importlib
 import os
 
-from fairseq import registry
+from tools import registry
 from fairseq.criterions.fairseq_criterion import FairseqCriterion, LegacyFairseqCriterion
 
 
@@ -21,4 +21,4 @@ build_criterion, register_criterion, CRITERION_REGISTRY = registry.setup_registr
 for file in os.listdir(os.path.dirname(__file__)):
     if file.endswith('.py') and not file.startswith('_'):
         module = file[:file.find('.py')]
-        importlib.import_module('fairseq.criterions.' + module)
+        importlib.import_module('criterions.' + module)

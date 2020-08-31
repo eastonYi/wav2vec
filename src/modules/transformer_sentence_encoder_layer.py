@@ -9,12 +9,12 @@ import torch
 import torch.nn as nn
 
 from fairseq import utils
-from fairseq.modules import (
+from modules import (
     LayerNorm,
     MultiheadAttention,
 )
-from fairseq.modules.quant_noise import quant_noise
-from fairseq.modules.fairseq_dropout import FairseqDropout
+from modules.quant_noise import quant_noise
+from modules.fairseq_dropout import FairseqDropout
 
 
 

@@ -12,7 +12,7 @@ import sys
 import torch
 
 from fairseq import checkpoint_utils, distributed_utils, options, utils
-from logging import metrics, progress_bar
+from loggings import metrics, progress_bar
 
 
 logging.basicConfig(

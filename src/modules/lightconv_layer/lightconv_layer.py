@@ -11,7 +11,7 @@ import torch.nn.functional as F
 import lightconv_cuda
 from fairseq import utils
 from fairseq.incremental_decoding_utils import with_incremental_state
-from fairseq.modules.fairseq_dropout import FairseqDropout
+from modules.fairseq_dropout import FairseqDropout
 
 
 class lightconvFunction(Function):

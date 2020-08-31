@@ -5,14 +5,13 @@
 
 import logging
 import math
-import types
 
 import torch
 import torch.optim
 import torch.distributed as dist
 
-from fairseq.optim import FairseqOptimizer, register_optimizer
-from fairseq.optim.fused_adam import get_fused_adam_class
+from optim import FairseqOptimizer, register_optimizer
+from optim.fused_adam import get_fused_adam_class
 
 logger = logging.getLogger(__name__)
 

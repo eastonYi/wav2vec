@@ -7,21 +7,19 @@ import contextlib
 import copy
 import importlib.util
 import logging
-import math
 import os
 import sys
 import warnings
-from collections import defaultdict
 from itertools import accumulate
 from typing import Callable, Dict, List, Optional
 
-import numpy as np
+
 import torch
 import torch.nn.functional as F
 from dataload import iterators
-from logging.meters import safe_round
-from fairseq.modules import gelu, gelu_accurate
-from fairseq.modules.multihead_attention import MultiheadAttention
+from loggings.meters import safe_round
+from modules import gelu, gelu_accurate
+from modules.multihead_attention import MultiheadAttention
 from torch import Tensor
 
 try:

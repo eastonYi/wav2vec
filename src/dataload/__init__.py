@@ -25,7 +25,6 @@ from .list_dataset import ListDataset
 from .lm_context_window_dataset import LMContextWindowDataset
 from .lru_cache_dataset import LRUCacheDataset
 from .mask_tokens_dataset import MaskTokensDataset
-from .monolingual_dataset import MonolingualDataset
 from .multi_corpus_sampled_dataset import MultiCorpusSampledDataset
 from .nested_dictionary_dataset import NestedDictionaryDataset
 from .noising import NoisingDataset
@@ -47,8 +46,6 @@ from .token_block_dataset import TokenBlockDataset
 from .transform_eos_dataset import TransformEosDataset
 from .transform_eos_lang_pair_dataset import TransformEosLangPairDataset
 from .shorten_dataset import TruncateDataset, RandomCropDataset
-from .multilingual.sampled_multi_dataset import SampledMultiDataset
-from .multilingual.sampled_multi_epoch_dataset import SampledMultiEpochDataset
 from .iterators import (
     CountingIterator,
     EpochBatchIterator,

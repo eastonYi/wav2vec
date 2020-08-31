@@ -8,16 +8,16 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import torch
 import torch.nn as nn
-from fairseq import options, utils
-from fairseq.models import (
+from tools import options, utils
+from models import (
     FairseqEncoder,
     FairseqEncoderDecoderModel,
     FairseqIncrementalDecoder,
     register_model,
     register_model_architecture,
 )
-from fairseq.models.fairseq_encoder import EncoderOut
-from fairseq.modules import (
+from models.fairseq_encoder import EncoderOut
+from modules import (
     AdaptiveSoftmax,
     FairseqDropout,
     LayerDropModuleList,
@@ -27,7 +27,7 @@ from fairseq.modules import (
     TransformerDecoderLayer,
     TransformerEncoderLayer,
 )
-from fairseq.modules.quant_noise import quant_noise as apply_quant_noise_
+from modules.quant_noise import quant_noise as apply_quant_noise_
 from torch import Tensor
 
 

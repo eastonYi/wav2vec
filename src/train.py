@@ -22,7 +22,7 @@ from tools import (
 )
 import tasks
 from dataload import iterators
-from logging import meters, metrics, progress_bar
+from loggings import meters, metrics, progress_bar
 from trainer import Trainer
 
 

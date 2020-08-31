@@ -6,11 +6,10 @@
 import logging
 import os
 import warnings
-
-
 import torch
 
-from fairseq import metrics, search, tokenizer, utils
+from loggings import metrics
+from tools import search, tokenizer, utils
 from dataload import data_utils, FairseqDataset, iterators, Dictionary
 
 logger = logging.getLogger(__name__)

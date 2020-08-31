@@ -8,16 +8,16 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from fairseq import utils
-from fairseq.modules.unfold import unfold1d
+from modules.unfold import unfold1d
 from fairseq.incremental_decoding_utils import with_incremental_state
-from fairseq.modules.fairseq_dropout import FairseqDropout
+from modules.fairseq_dropout import FairseqDropout
 
 
 def LightweightConv(input_size, kernel_size=1, padding_l=None, num_heads=1,
                     weight_dropout=0., weight_softmax=False, bias=False):
     if torch.cuda.is_available():
         try:
-            from fairseq.modules.lightconv_layer import LightconvLayer
+            from modules.lightconv_layer import LightconvLayer
             return LightconvLayer(input_size, kernel_size=kernel_size,
                                   padding_l=padding_l, num_heads=num_heads,
                                   weight_dropout=weight_dropout,

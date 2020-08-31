@@ -10,7 +10,7 @@ import torch.nn.functional as F
 
 from fairseq import metrics, utils
 from fairseq.criterions import FairseqCriterion, register_criterion
-from logging.meters import safe_round
+from loggings.meters import safe_round
 
 
 @register_criterion('wav2vec')

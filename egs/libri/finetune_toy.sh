@@ -4,7 +4,7 @@ MODEL_PATH=exp/base_finetune/checkpoint_best.pt
 
 . path.sh
 
-CUDA_VISIBLE_DEVICES= python $SRC_ROOT/train.py $DATA_DIR --save-dir $SAVE_DIR \
+CUDA_VISIBLE_DEVICES=0,1 python $SRC_ROOT/train.py $DATA_DIR --save-dir $SAVE_DIR \
 --post-process letter --valid-subset "dev_other" --no-epoch-checkpoints --best-checkpoint-metric uer --num-workers 2 \
 --max-update 1000 --sentence-avg --task audio_pretraining --arch wav2vec_ctc --w2v-path $MODEL_PATH \
 --labels ltr --apply-mask --mask-selection static --mask-other 0 --mask-length 10 --mask-prob 0.5 --layerdrop 0.1 \

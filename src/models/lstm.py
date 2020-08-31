@@ -7,15 +7,15 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from fairseq import options, utils
-from fairseq.models import (
+from tools import options, utils
+from models import (
     FairseqEncoder,
     FairseqIncrementalDecoder,
     FairseqEncoderDecoderModel,
     register_model,
     register_model_architecture,
 )
-from fairseq.modules import AdaptiveSoftmax, FairseqDropout
+from modules import AdaptiveSoftmax, FairseqDropout
 from torch import Tensor
 from typing import Dict, List, Optional, Tuple
 

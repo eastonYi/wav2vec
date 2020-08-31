@@ -15,7 +15,7 @@ import os
 import shutil
 import sys
 
-from fairseq import options, tasks, utils
+from tools import options, tasks, utils
 from dataload import indexed_dataset
 from fairseq.binarizer import Binarizer
 

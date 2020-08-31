@@ -17,8 +17,8 @@ import numpy as np
 import torch
 
 from fairseq import checkpoint_utils, options, scoring, tasks, utils
-from logging import progress_bar
-from logging.meters import StopwatchMeter, TimeMeter
+from loggings import progress_bar
+from loggings.meters import StopwatchMeter, TimeMeter
 from dataload import encoders
 
 

@@ -3,17 +3,17 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from fairseq import options
-from fairseq.models import (
+from tools import options
+from models import (
     FairseqLanguageModel,
     register_model,
     register_model_architecture,
 )
-from fairseq.models.lightconv import (
+from models.lightconv import (
     Embedding,
     LightConvDecoder,
 )
-from fairseq.modules import (
+from modules import (
     AdaptiveInput,
     CharacterTokenEmbedder,
 )

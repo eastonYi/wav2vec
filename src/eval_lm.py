@@ -16,8 +16,8 @@ import torch
 
 from fairseq import checkpoint_utils, options, tasks, utils
 from dataload import LMContextWindowDataset
-from logging import progress_bar
-from logging.meters import StopwatchMeter, TimeMeter
+from loggings import progress_bar
+from loggings.meters import StopwatchMeter, TimeMeter
 from fairseq.sequence_scorer import SequenceScorer
 from fairseq import distributed_utils
 

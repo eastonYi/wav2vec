@@ -6,12 +6,12 @@
 from collections import OrderedDict
 
 from fairseq import utils
-from fairseq.models import (
+from models import (
     FairseqMultiModel,
     register_model,
     register_model_architecture,
 )
-from fairseq.models.transformer import (
+from models.transformer import (
     base_architecture,
     Embedding,
     TransformerModel,

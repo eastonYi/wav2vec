@@ -8,7 +8,7 @@ from typing import Dict, Optional
 
 from torch import Tensor
 
-from fairseq.models import FairseqDecoder
+from models import FairseqDecoder
 from fairseq.incremental_decoding_utils import with_incremental_state
 
 

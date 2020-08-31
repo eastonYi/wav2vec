@@ -13,14 +13,15 @@ import logging
 import sys
 import time
 from typing import Any, Dict, List
-
 import torch
 
-from fairseq import checkpoint_utils, distributed_utils, models, optim, utils
-from fairseq.file_io import PathManager
+import models
+import optim
+from tools import checkpoint_utils, distributed_utils, utils
+from tools.file_io import PathManager
 from loggings import meters, metrics
-from fairseq.nan_detector import NanDetector
-from fairseq.optim import lr_scheduler
+from tools.nan_detector import NanDetector
+from optim import lr_scheduler
 
 
 logger = logging.getLogger(__name__)
@@ -691,7 +692,7 @@ class Trainer(object):
 
     def get_meter(self, name):
         """[deprecated] Get a specific meter by name."""
-        from fairseq import meters
+        from loggings import meters
 
         if 'get_meter' not in self._warn_once:
             self._warn_once.add('get_meter')

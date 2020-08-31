@@ -6,8 +6,8 @@
 import os
 from typing import Any, Dict
 
-from fairseq import checkpoint_utils
-from fairseq.data.legacy.masked_lm_dictionary import MaskedLMDictionary
+from tools import checkpoint_utils
+from dataload.legacy.masked_lm_dictionary import MaskedLMDictionary
 from models import register_model, register_model_architecture
 from models.transformer import (
     TransformerDecoder,

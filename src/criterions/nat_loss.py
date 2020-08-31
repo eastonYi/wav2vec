@@ -10,7 +10,7 @@ import torch
 from torch import Tensor
 
 from loggings import metrics, utils
-from fairseq.criterions import FairseqCriterion, register_criterion
+from criterions import FairseqCriterion, register_criterion
 
 
 @register_criterion("nat_loss")

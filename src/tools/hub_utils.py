@@ -27,7 +27,7 @@ def from_pretrained(
     archive_map=None,
     **kwargs
 ):
-    from fairseq import checkpoint_utils, file_utils
+    from tools import checkpoint_utils, file_utils
 
     if archive_map is not None:
         if model_name_or_path in archive_map:

@@ -8,7 +8,7 @@ from typing import Dict, List, Optional
 
 import torch
 import torch.nn as nn
-from fairseq import search, utils
+from tools import search, utils
 from dataload import data_utils
 from models import FairseqIncrementalDecoder
 from models.fairseq_encoder import EncoderOut

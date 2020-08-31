@@ -17,7 +17,7 @@ import sys
 
 from tools import options, tasks, utils
 from dataload import indexed_dataset
-from fairseq.binarizer import Binarizer
+from tools.binarizer import Binarizer
 
 
 logging.basicConfig(

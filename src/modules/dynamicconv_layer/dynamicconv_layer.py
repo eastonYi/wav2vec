@@ -11,7 +11,7 @@ import torch.nn.functional as F
 import dynamicconv_cuda
 from tools import utils
 from modules.unfold import unfold1d
-from fairseq.incremental_decoding_utils import with_incremental_state
+from tools.incremental_decoding_utils import with_incremental_state
 from modules.fairseq_dropout import FairseqDropout
 
 

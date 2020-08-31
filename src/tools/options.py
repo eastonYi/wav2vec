@@ -10,7 +10,7 @@ from typing import Callable, List, Optional
 import torch
 
 from tools import utils
-from fairseq.data.indexed_dataset import get_available_dataset_impl
+from dataload.indexed_dataset import get_available_dataset_impl
 
 
 def get_preprocessing_parser(default_task="translation"):
@@ -155,7 +155,7 @@ def parse_args_and_arch(
         ARCH_MODEL_REGISTRY[args.arch].add_args(model_specific_group)
 
     # Add *-specific args to parser.
-    from fairseq.registry import REGISTRIES
+    from registry import REGISTRIES
 
     for registry_name, REGISTRY in REGISTRIES.items():
         choice = getattr(args, registry_name, None)
@@ -164,12 +164,12 @@ def parse_args_and_arch(
             if hasattr(cls, "add_args"):
                 cls.add_args(parser)
     if hasattr(args, "task"):
-        from fairseq.tasks import TASK_REGISTRY
+        from tasks import TASK_REGISTRY
 
         TASK_REGISTRY[args.task].add_args(parser)
     if getattr(args, "use_bmuf", False):
         # hack to support extra args for block distributed data parallelism
-        from fairseq.optim.bmuf import FairseqBMUF
+        from optim.bmuf import FairseqBMUF
 
         FairseqBMUF.add_args(parser)
 
@@ -271,7 +271,7 @@ def get_parser(desc, default_task="translation"):
                         help='path to quantization config file')
     parser.add_argument('--profile', action='store_true', help='enable autograd profiler emit_nvtx')
 
-    from fairseq.registry import REGISTRIES
+    from registry import REGISTRIES
     for registry_name, REGISTRY in REGISTRIES.items():
         parser.add_argument(
             '--' + registry_name.replace('_', '-'),
@@ -280,7 +280,7 @@ def get_parser(desc, default_task="translation"):
         )
 
     # Task definitions can be found under fairseq/tasks/
-    from fairseq.tasks import TASK_REGISTRY
+    from tasks import TASK_REGISTRY
     parser.add_argument('--task', metavar='TASK', default=default_task,
                         choices=TASK_REGISTRY.keys(),
                         help='task')

@@ -122,21 +122,13 @@ def distributed_init(args):
 
     if args.model_parallel_size > 1:
         try:
-            from fairseq.model_parallel.megatron.mpu import (
-                get_model_parallel_rank,
-                initialize_model_parallel,
-                model_parallel_cuda_manual_seed,
-            )
+            raise NotImplementedError()
         except ImportError:
             raise ImportError(
                 '\n\nPlease install the megatron submodule:'
                 '\n\n  git submodule update --init '
                 'fairseq/model_parallel/megatron'
             )
-        initialize_model_parallel(args.model_parallel_size)
-        model_parallel_cuda_manual_seed(args.seed)
-        model_part_number = get_model_parallel_rank()
-        args.checkpoint_suffix += '-model_part-{0}'.format(model_part_number)
     return args.distributed_rank
 
 

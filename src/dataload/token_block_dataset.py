@@ -43,7 +43,7 @@ class TokenBlockDataset(FairseqDataset):
         document_sep_len=1,
     ):
         try:
-            from fairseq.data.token_block_utils_fast import (
+            from dataload.token_block_utils_fast import (
                 _get_slice_indices_fast,
                 _get_block_to_dataset_index_fast,
             )

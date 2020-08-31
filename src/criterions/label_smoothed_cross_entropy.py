@@ -6,7 +6,7 @@
 import math
 
 from loggings import metrics, utils
-from fairseq.criterions import FairseqCriterion, register_criterion
+from criterions import FairseqCriterion, register_criterion
 
 
 def label_smoothed_nll_loss(lprobs, target, epsilon, ignore_index=None, reduce=True):

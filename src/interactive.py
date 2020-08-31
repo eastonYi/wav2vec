@@ -19,9 +19,10 @@ import numpy as np
 
 import torch
 
-from fairseq import checkpoint_utils, distributed_utils, options, tasks, utils
+import tasks
+from tools import checkpoint_utils, distributed_utils, options, utils
 from dataload import encoders
-from fairseq.token_generation_constraints import pack_constraints, unpack_constraints
+from tools.token_generation_constraints import pack_constraints, unpack_constraints
 from .generate import get_symbols_to_strip_from_output
 
 logging.basicConfig(

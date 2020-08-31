@@ -14,12 +14,12 @@ import os
 
 import torch
 
-from fairseq import checkpoint_utils, options, tasks, utils
+import tasks
+from tools import checkpoint_utils, distributed_utils, options, utils
 from dataload import LMContextWindowDataset
 from loggings import progress_bar
 from loggings.meters import StopwatchMeter, TimeMeter
-from fairseq.sequence_scorer import SequenceScorer
-from fairseq import distributed_utils
+from tools.sequence_scorer import SequenceScorer
 
 
 logging.basicConfig(

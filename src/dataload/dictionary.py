@@ -9,10 +9,10 @@ from multiprocessing import Pool
 
 import torch
 from tools import utils
-from fairseq.binarizer import safe_readline
+from tools.binarizer import safe_readline
 from dataload import data_utils
-from fairseq.file_io import PathManager
-from fairseq.tokenizer import tokenize_line
+from tools.file_io import PathManager
+from tools.tokenizer import tokenize_line
 
 
 class Dictionary(object):

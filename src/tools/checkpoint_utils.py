@@ -12,7 +12,7 @@ from collections import OrderedDict
 from typing import Union
 
 import torch
-from fairseq.file_io import PathManager
+from tools.file_io import PathManager
 from models import FairseqDecoder, FairseqEncoder
 from torch.serialization import default_restore_location
 
@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 
 def save_checkpoint(args, trainer, epoch_itr, val_loss):
-    from fairseq import distributed_utils, meters
+    from loggings import meters
 
     # only one worker should attempt to create the required dir
     if args.distributed_rank == 0:
@@ -224,7 +224,7 @@ def load_model_ensemble(filenames, arg_overrides=None, task=None, strict=True, s
 
 
 def load_model_ensemble_and_task(filenames, arg_overrides=None, task=None, strict=True, suffix=''):
-    from fairseq import tasks
+    import tasks
 
     ensemble = []
     for filename in filenames:
@@ -321,7 +321,7 @@ def save_state(
 
 def _upgrade_state_dict(state):
     """Helper for upgrading old model checkpoints."""
-    from fairseq import models, registry, tasks
+    import models, registry, tasks
 
     # add optimizer_history
     if "optimizer_history" not in state:

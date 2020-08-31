@@ -9,7 +9,7 @@ import torch
 import torch.nn.functional as F
 
 from loggings import metrics, modules, utils
-from fairseq.criterions import FairseqCriterion, register_criterion
+from criterions import FairseqCriterion, register_criterion
 
 
 @register_criterion('masked_lm')

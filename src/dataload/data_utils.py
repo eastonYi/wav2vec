@@ -69,7 +69,7 @@ def load_indexed_dataset(path, dictionary=None, dataset_impl=None, combine=False
             combine 'data-bin/train', 'data-bin/train1', ... and return a
             single ConcatDataset instance.
     """
-    from fairseq.data.concat_dataset import ConcatDataset
+    from dataload.concat_dataset import ConcatDataset
     import fairseq.data.indexed_dataset as indexed_dataset
 
     datasets = []
@@ -236,7 +236,7 @@ def batch_by_size(
             *required_batch_size_multiple* will be ignored (default: None).
     """
     try:
-        from fairseq.data.data_utils_fast import (
+        from dataload.data_utils_fast import (
             batch_by_size_fast, batch_fixed_shapes_fast,
         )
     except ImportError:

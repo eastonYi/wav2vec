@@ -8,7 +8,7 @@ import torch.nn.functional as F
 
 from tools import utils
 from .conv_tbc import ConvTBC
-from fairseq.incremental_decoding_utils import with_incremental_state
+from tools.incremental_decoding_utils import with_incremental_state
 
 
 @with_incremental_state

@@ -40,7 +40,7 @@ def split_paths(paths: str) -> List[str]:
 
 
 def load_ensemble_for_inference(filenames, task, model_arg_overrides=None):
-    from fairseq import checkpoint_utils
+    from tools import checkpoint_utils
 
     deprecation_warning(
         "utils.load_ensemble_for_inference is deprecated. "
@@ -168,7 +168,7 @@ def load_embedding(embed_dict, vocab, embedding):
 
 
 def replace_unk(hypo_str, src_str, alignment, align_dict, unk):
-    from fairseq import tokenizer
+    from tools import tokenizer
 
     # Tokens are strings here
     hypo_tokens = tokenizer.tokenize_line(hypo_str)

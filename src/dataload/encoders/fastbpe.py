@@ -3,8 +3,8 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from fairseq import file_utils
-from fairseq.data.encoders import register_bpe
+from tools import file_utils
+from dataload.encoders import register_bpe
 
 
 @register_bpe('fastbpe')

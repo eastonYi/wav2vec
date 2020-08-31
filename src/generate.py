@@ -11,12 +11,12 @@ import logging
 import math
 import os
 import sys
-
 import numpy as np
-
 import torch
 
-from fairseq import checkpoint_utils, options, scoring, tasks, utils
+import scoring
+import tasks
+from tools import checkpoint_utils, options, utils
 from loggings import progress_bar
 from loggings.meters import StopwatchMeter, TimeMeter
 from dataload import encoders

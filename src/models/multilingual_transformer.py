@@ -56,7 +56,7 @@ class MultilingualTransformerModel(FairseqMultiModel):
     @classmethod
     def build_model(cls, args, task):
         """Build a new model instance."""
-        from fairseq.tasks.multilingual_translation import MultilingualTranslationTask
+        from tasks.multilingual_translation import MultilingualTranslationTask
         assert isinstance(task, MultilingualTranslationTask)
 
         # make sure all arguments are present in older models

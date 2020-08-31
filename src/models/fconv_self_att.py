@@ -11,7 +11,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from fairseq import checkpoint_utils
+from tools import checkpoint_utils
 from models import (
     CompositeEncoder,
     FairseqDecoder,
@@ -28,7 +28,7 @@ from modules import (
     LearnedPositionalEmbedding,
     LinearizedConvolution,
 )
-from fairseq.incremental_decoding_utils import with_incremental_state
+from tools.incremental_decoding_utils import with_incremental_state
 
 logger = logging.getLogger(__name__)
 

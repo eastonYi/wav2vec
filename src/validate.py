@@ -11,7 +11,7 @@ import sys
 
 import torch
 
-from fairseq import checkpoint_utils, distributed_utils, options, utils
+from tools import checkpoint_utils, distributed_utils, options, utils
 from loggings import metrics, progress_bar
 
 

@@ -5,7 +5,7 @@
 
 import re
 
-from fairseq.data.encoders import register_tokenizer
+from dataload.encoders import register_tokenizer
 
 
 @register_tokenizer('space')

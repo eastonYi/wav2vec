@@ -243,7 +243,8 @@ class FairseqTask(object):
         Returns:
             a :class:`~fairseq.models.BaseFairseqModel` instance
         """
-        from fairseq import models, quantization_utils
+        import models
+        from tools import quantization_utils
         model = models.build_model(args, self)
         if getattr(args, 'tpu', False):
             model.prepare_for_tpu_()
@@ -261,7 +262,7 @@ class FairseqTask(object):
         Returns:
             a :class:`~fairseq.criterions.FairseqCriterion` instance
         """
-        from fairseq import criterions
+        import criterions
 
         return criterions.build_criterion(args, self)
 
@@ -270,14 +271,14 @@ class FairseqTask(object):
         seq_gen_cls=None, extra_gen_cls_kwargs=None
     ):
         if getattr(args, "score_reference", False):
-            from fairseq.sequence_scorer import SequenceScorer
+            from tools.sequence_scorer import SequenceScorer
 
             return SequenceScorer(
                 self.target_dictionary,
                 compute_alignment=getattr(args, "print_alignment", False),
             )
 
-        from fairseq.sequence_generator import (
+        from tools.sequence_generator import (
             SequenceGenerator,
             SequenceGeneratorWithAlignment,
         )

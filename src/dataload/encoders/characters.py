@@ -4,7 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 
-from dataload.encoders import register_bpe
+from fairseq.data.encoders import register_bpe
 
 SPACE = chr(32)
 SPACE_ESCAPE = chr(9601)

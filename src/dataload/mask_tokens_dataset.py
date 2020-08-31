@@ -8,7 +8,9 @@ from functools import lru_cache
 import numpy as np
 import torch
 
-from dataload import data_utils, Dictionary, BaseWrapperDataset, LRUCacheDataset
+from dataload import data_utils, Dictionary
+
+from . import BaseWrapperDataset, LRUCacheDataset
 
 
 class MaskTokensDataset(BaseWrapperDataset):

@@ -31,7 +31,7 @@ class AudioPretrainingTask(FairseqTask):
     @staticmethod
     def add_args(parser):
         """Add task-specific arguments to the parser."""
-        parser.add_argument("data", default='data', help="path to data directory")
+        parser.add_argument("data", help="path to data directory")
         parser.add_argument(
             "--sample-rate",
             default=16000,
@@ -128,10 +128,20 @@ class AudioPretrainingTask(FairseqTask):
 
     @property
     def target_dictionary(self):
-        """Return the :class:`~dataload.Dictionary` for the language
+        """Return the :class:`~fairseq.data.Dictionary` for the language
         model."""
         return self._target_dictionary
 
     def max_positions(self):
         """Maximum input length supported by the encoder."""
         return (sys.maxsize, sys.maxsize)
+
+    def filter_indices_by_size(
+            self,
+            indices,
+            dataset,
+            max_positions=None,
+            ignore_invalid_inputs=False,
+    ):
+        # we do not need to filter by size in this task as dataloaders take care of this
+        return indices

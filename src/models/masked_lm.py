@@ -9,19 +9,19 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from utils import utils
-from models import (
+from fairseq import utils
+from fairseq.models import (
     FairseqEncoderModel,
     FairseqEncoder,
     register_model,
     register_model_architecture,
 )
-from modules import (
+from fairseq.modules import (
     LayerNorm,
     SinusoidalPositionalEmbedding,
     TransformerSentenceEncoder,
 )
-from modules.transformer_sentence_encoder import init_bert_params
+from fairseq.modules.transformer_sentence_encoder import init_bert_params
 
 
 logger = logging.getLogger(__name__)

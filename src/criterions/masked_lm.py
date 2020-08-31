@@ -4,12 +4,12 @@
 # LICENSE file in the root directory of this source tree.
 
 import math
+
 import torch
 import torch.nn.functional as F
 
-import modules
-from utils import metrics, utils
-from criterions import FairseqCriterion, register_criterion
+from fairseq import metrics, modules, utils
+from fairseq.criterions import FairseqCriterion, register_criterion
 
 
 @register_criterion('masked_lm')
@@ -18,7 +18,7 @@ class MaskedLmLoss(FairseqCriterion):
     Implementation for the loss used in masked language model (MLM) training.
     """
 
-    def __init__(self, task, tpu):
+    def __init__(self, task, tpu=False):
         super().__init__(task)
         self.tpu = tpu
 

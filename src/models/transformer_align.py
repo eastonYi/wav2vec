@@ -3,8 +3,8 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from models import register_model, register_model_architecture
-from models.transformer import (
+from fairseq.models import register_model, register_model_architecture
+from fairseq.models.transformer import (
     base_architecture,
     transformer_wmt_en_de_big,
     TransformerModel,

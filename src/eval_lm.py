@@ -14,12 +14,12 @@ import os
 
 import torch
 
-from utils import checkpoint_utils, options, tasks, utils
+from fairseq import checkpoint_utils, options, tasks, utils
 from dataload import LMContextWindowDataset
-from utils.logging import progress_bar
-from utils.meters import StopwatchMeter, TimeMeter
-from utils.sequence_scorer import SequenceScorer
-from utils import distributed_utils
+from logging import progress_bar
+from logging.meters import StopwatchMeter, TimeMeter
+from fairseq.sequence_scorer import SequenceScorer
+from fairseq import distributed_utils
 
 
 logging.basicConfig(
@@ -176,7 +176,7 @@ def main(parsed_args, **unused_kwargs):
             tgt_len = tokens.numel()
             pos_scores = hypo['positional_scores'].float()
 
-            if args.add_bos_token:
+            if getattr(args, 'add_bos_token', False):
                 assert hypo['tokens'][0].item() == task.target_dictionary.bos()
                 tokens = tokens[1:]
                 pos_scores = pos_scores[1:]

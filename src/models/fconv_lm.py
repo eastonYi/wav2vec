@@ -2,12 +2,14 @@
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
-from models import (
+
+from fairseq import options
+from fairseq.models import (
     FairseqLanguageModel,
     register_model,
     register_model_architecture,
 )
-from models.fconv import FConvDecoder
+from fairseq.models.fconv import FConvDecoder
 
 
 @register_model('fconv_lm')
@@ -53,7 +55,10 @@ class FConvLanguageModel(FairseqLanguageModel):
             max_positions=args.tokens_per_sample,
             share_embed=False,
             positional_embeddings=False,
-            adaptive_softmax_cutoff=None,
+            adaptive_softmax_cutoff=(
+                options.eval_str_list(args.adaptive_softmax_cutoff, type=int)
+                if args.criterion == 'adaptive_loss' else None
+            ),
             adaptive_softmax_dropout=args.adaptive_softmax_dropout,
         )
         return FConvLanguageModel(decoder)

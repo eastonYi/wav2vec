@@ -10,7 +10,7 @@ import warnings
 
 import torch
 
-from utils import metrics, search, tokenizer, utils
+from fairseq import metrics, search, tokenizer, utils
 from dataload import data_utils, FairseqDataset, iterators, Dictionary
 
 logger = logging.getLogger(__name__)
@@ -104,8 +104,12 @@ class FairseqTask(object):
         Returns:
             a :class:`~fairseq.data.FairseqDataset` corresponding to *split*
         """
+        from dataload import FairseqDataset
+
         if split not in self.datasets:
             raise KeyError("Dataset not loaded: " + split)
+        if not isinstance(self.datasets[split], FairseqDataset):
+            raise TypeError("Datasets are expected to be of type FairseqDataset")
         return self.datasets[split]
 
     def filter_indices_by_size(
@@ -153,7 +157,7 @@ class FairseqTask(object):
         num_shards=1,
         shard_id=0,
         num_workers=0,
-        epoch=1
+        epoch=1,
     ):
         """
         Get an iterator that yields batches of data from the given dataset.
@@ -224,7 +228,7 @@ class FairseqTask(object):
             shard_id=shard_id,
             num_workers=num_workers,
             epoch=epoch,
-            buffer_size=getattr(self.args, 'data_buffer_size', 0)
+            buffer_size=getattr(self.args, 'data_buffer_size', 0),
         )
         self.dataset_to_epoch_iter[dataset] = epoch_iter
         return epoch_iter
@@ -240,8 +244,7 @@ class FairseqTask(object):
         Returns:
             a :class:`~fairseq.models.BaseFairseqModel` instance
         """
-        import models
-        from utils import quantization_utils
+        from fairseq import models, quantization_utils
         model = models.build_model(args, self)
         if getattr(args, 'tpu', False):
             model.prepare_for_tpu_()
@@ -259,7 +262,7 @@ class FairseqTask(object):
         Returns:
             a :class:`~fairseq.criterions.FairseqCriterion` instance
         """
-        import criterions
+        from fairseq import criterions
 
         return criterions.build_criterion(args, self)
 
@@ -268,14 +271,14 @@ class FairseqTask(object):
         seq_gen_cls=None, extra_gen_cls_kwargs=None
     ):
         if getattr(args, "score_reference", False):
-            from utils.sequence_scorer import SequenceScorer
+            from fairseq.sequence_scorer import SequenceScorer
 
             return SequenceScorer(
                 self.target_dictionary,
                 compute_alignment=getattr(args, "print_alignment", False),
             )
 
-        from models.sequence_generator import (
+        from fairseq.sequence_generator import (
             SequenceGenerator,
             SequenceGeneratorWithAlignment,
         )
@@ -288,6 +291,7 @@ class FairseqTask(object):
         diverse_beam_strength = getattr(args, "diverse_beam_strength", 0.5)
         match_source_len = getattr(args, "match_source_len", False)
         diversity_rate = getattr(args, "diversity_rate", -1)
+        constrained = getattr(args, "constraints", False)
         if (
             sum(
                 int(cond)
@@ -327,6 +331,8 @@ class FairseqTask(object):
             search_strategy = search.DiverseSiblingsSearch(
                 self.target_dictionary, diversity_rate
             )
+        elif constrained:
+            search_strategy = search.LexicallyConstrainedBeamSearch(self.target_dictionary, args.constraints)
         else:
             search_strategy = search.BeamSearch(self.target_dictionary)
 
@@ -392,9 +398,9 @@ class FairseqTask(object):
             loss, sample_size, logging_output = criterion(model, sample)
         return loss, sample_size, logging_output
 
-    def inference_step(self, generator, models, sample, prefix_tokens=None):
+    def inference_step(self, generator, models, sample, prefix_tokens=None, constraints=None):
         with torch.no_grad():
-            return generator.generate(models, sample, prefix_tokens=prefix_tokens)
+            return generator.generate(models, sample, prefix_tokens=prefix_tokens, constraints=constraints)
 
     def begin_epoch(self, epoch, model):
         """Hook function called before the start of each epoch."""

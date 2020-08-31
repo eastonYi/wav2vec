@@ -16,12 +16,12 @@ from typing import Any, Dict, List
 
 import torch
 
-from utils import checkpoint_utils, distributed_utils, utils
+from tools import checkpoint_utils, distributed_utils, utils
 import models
 import optim
-from utils.file_io import PathManager
-from utils import meters, metrics
-from utils.nan_detector import NanDetector
+from tools.file_io import PathManager
+from logging import meters, metrics
+from tools.nan_detector import NanDetector
 from optim import lr_scheduler
 
 
@@ -334,7 +334,7 @@ class Trainer(object):
                 combine=combine,
                 data_selector=data_selector,
             )
-        iterator = self.task.get_batch_iterator(
+        return self.task.get_batch_iterator(
             dataset=self.task.dataset(self.args.train_subset),
             max_tokens=self.args.max_tokens,
             max_sentences=self.args.max_sentences,
@@ -349,9 +349,8 @@ class Trainer(object):
             num_shards=self.data_parallel_world_size if shard_batch_itr else 1,
             shard_id=self.data_parallel_rank if shard_batch_itr else 0,
             num_workers=self.args.num_workers,
-            epoch=epoch
+            epoch=epoch,
         )
-        return iterator
 
     def get_valid_iterator(
         self,
@@ -371,7 +370,7 @@ class Trainer(object):
             seed=self.args.seed,
             num_shards=self.data_parallel_world_size,
             shard_id=self.data_parallel_rank,
-            num_workers=self.args.num_workers
+            num_workers=self.args.num_workers,
         )
 
     def begin_epoch(self, epoch):
@@ -595,7 +594,13 @@ class Trainer(object):
                     torch.cuda.empty_cache()
 
         if self.args.fp16:
-            metrics.log_scalar("loss_scale", self.optimizer.scaler.loss_scale, priority=700, round=0)
+            metrics.log_scalar(
+                "loss_scale",
+                self.optimizer.scaler.loss_scale,
+                priority=700,
+                round=4,
+                weight=0,
+            )
 
         metrics.log_stop_time("train_wall")
 
@@ -688,7 +693,7 @@ class Trainer(object):
 
     def get_meter(self, name):
         """[deprecated] Get a specific meter by name."""
-        from utils import meters
+        from fairseq import meters
 
         if 'get_meter' not in self._warn_once:
             self._warn_once.add('get_meter')

@@ -5,8 +5,8 @@
 
 from torch import nn
 
-from utils import utils
-from criterions import FairseqCriterion, register_criterion
+from fairseq import utils
+from fairseq.criterions import FairseqCriterion, register_criterion
 
 
 @register_criterion('composite_loss')

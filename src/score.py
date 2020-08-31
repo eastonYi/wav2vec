@@ -6,11 +6,12 @@
 """
 BLEU scoring of generated translations against reference translations.
 """
+
 import argparse
 import os
 import sys
 
-from utils.scoring import bleu
+from fairseq.scoring import bleu
 from dataload import dictionary
 
 

@@ -8,11 +8,11 @@ from collections import Counter
 from multiprocessing import Pool
 
 import torch
-from utils import utils
-from utils.binarizer import safe_readline
+from fairseq import utils
+from fairseq.binarizer import safe_readline
 from dataload import data_utils
-from utils.file_io import PathManager
-from utils.tokenizer import tokenize_line
+from fairseq.file_io import PathManager
+from fairseq.tokenizer import tokenize_line
 
 
 class Dictionary(object):
@@ -21,10 +21,10 @@ class Dictionary(object):
     def __init__(
         self,
         *,  # begin keyword-only arguments
+        bos="<s>",
         pad="<pad>",
         eos="</s>",
         unk="<unk>",
-        bos="<s>",
         extra_special_symbols=None,
     ):
         self.unk_word, self.pad_word, self.eos_word = unk, pad, eos

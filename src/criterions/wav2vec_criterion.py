@@ -8,9 +8,9 @@ import math
 import torch
 import torch.nn.functional as F
 
-from utils import metrics, utils
-from criterions import FairseqCriterion, register_criterion
-from utils.meters import safe_round
+from fairseq import metrics, utils
+from fairseq.criterions import FairseqCriterion, register_criterion
+from logging.meters import safe_round
 
 
 @register_criterion('wav2vec')
@@ -59,7 +59,7 @@ class Wav2vecCriterion(FairseqCriterion):
             loss = F.binary_cross_entropy_with_logits(logits, target.float(), weights, reduction="sum" if reduce else "none",)
 
         sample_size = target.numel() if self.infonce else target.long().sum().item()
-        losses.append(loss)
+        losses.append(loss.detach().clone())
 
         if self.loss_weights is not None:
             assert hasattr(model, "get_extra_losses")

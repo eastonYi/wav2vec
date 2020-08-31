@@ -3,8 +3,8 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from modules import TransformerSentenceEncoderLayer
-from modules.sparse_multihead_attention import SparseMultiheadAttention
+from fairseq.modules import TransformerSentenceEncoderLayer
+from fairseq.modules.sparse_multihead_attention import SparseMultiheadAttention
 
 
 class SparseTransformerSentenceEncoderLayer(TransformerSentenceEncoderLayer):

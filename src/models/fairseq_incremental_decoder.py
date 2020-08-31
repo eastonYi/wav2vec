@@ -8,8 +8,8 @@ from typing import Dict, Optional
 
 from torch import Tensor
 
-from models import FairseqDecoder
-from utils.incremental_decoding_utils import with_incremental_state
+from fairseq.models import FairseqDecoder
+from fairseq.incremental_decoding_utils import with_incremental_state
 
 
 logger = logging.getLogger(__name__)

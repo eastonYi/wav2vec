@@ -5,7 +5,7 @@
 
 import torch
 
-from utils import utils
+from fairseq import utils
 
 
 class FairseqOptimizer(object):

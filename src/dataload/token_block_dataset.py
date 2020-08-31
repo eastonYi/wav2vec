@@ -43,14 +43,13 @@ class TokenBlockDataset(FairseqDataset):
         document_sep_len=1,
     ):
         try:
-            from dataload.token_block_utils_fast import (
+            from fairseq.data.token_block_utils_fast import (
                 _get_slice_indices_fast,
                 _get_block_to_dataset_index_fast,
             )
         except ImportError:
             raise ImportError(
                 'Please build Cython components with: `pip install --editable .` '
-                'or `python setup.py build_ext --inplace`'
             )
 
         super().__init__()

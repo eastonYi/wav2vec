@@ -12,10 +12,10 @@ from typing import Dict, List, Optional, Tuple
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from utils import utils
-from utils.checkpoint_utils import prune_state_dict
+from fairseq import utils
+from fairseq.checkpoint_utils import prune_state_dict
 from dataload import Dictionary
-from models import FairseqDecoder, FairseqEncoder
+from fairseq.models import FairseqDecoder, FairseqEncoder
 from torch import Tensor
 
 
@@ -245,7 +245,7 @@ class BaseFairseqModel(nn.Module):
                 at the given path/URL. Can start with '.' or './' to reuse the
                 model archive path.
         """
-        from utils import hub_utils
+        from fairseq import hub_utils
 
         x = hub_utils.from_pretrained(
             model_name_or_path,

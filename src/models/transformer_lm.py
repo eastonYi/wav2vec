@@ -3,17 +3,17 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from utils import utils
-from models import (
+from fairseq import options, utils
+from fairseq.models import (
     FairseqLanguageModel,
     register_model,
     register_model_architecture,
 )
-from models.transformer import (
+from fairseq.models.transformer import (
     Embedding,
     TransformerDecoder,
 )
-from modules import (
+from fairseq.modules import (
     AdaptiveInput,
     CharacterTokenEmbedder,
 )
@@ -147,7 +147,7 @@ class TransformerLanguageModel(FairseqLanguageModel):
             embed_tokens = AdaptiveInput(
                 len(task.source_dictionary), task.source_dictionary.pad(), args.decoder_input_dim,
                 args.adaptive_input_factor, args.decoder_embed_dim,
-                utils.eval_str_list(args.adaptive_input_cutoff, type=int),
+                options.eval_str_list(args.adaptive_input_cutoff, type=int),
                 args.quant_noise_pq, args.quant_noise_pq_block_size,
             )
         else:

@@ -11,6 +11,7 @@ import os
 import queue
 import time
 from threading import Thread
+
 import numpy as np
 import torch
 
@@ -58,7 +59,10 @@ class CountingIterator(object):
     def __iter__(self):
         for x in self.iterable:
             if self.n >= self.total:
-                return
+                raise RuntimeError(
+                    'Mismatch between actual and expected iterable length. '
+                    'Please report this to the fairseq developers.'
+                )
             self.n += 1
             yield x
 
@@ -83,6 +87,8 @@ class CountingIterator(object):
         # Propagate this change to the underlying iterator
         if hasattr(self.iterable, "take"):
             self.iterable.take(n)
+        else:
+            self.iterable = itertools.islice(self.iterable, n)
 
 
 class EpochBatchIterating(object):
@@ -295,9 +301,16 @@ class EpochBatchIterator(EpochBatchIterating):
 
     def state_dict(self):
         """Returns a dictionary containing a whole state of the iterator."""
+        if self.end_of_epoch():
+            epoch = self.epoch + 1
+            iter_in_epoch = 0
+        else:
+            epoch = self.epoch
+            iter_in_epoch = self.iterations_in_epoch
         return {
-            'epoch': self.epoch,
-            'iterations_in_epoch': self.iterations_in_epoch,
+            'version': 2,
+            'epoch': epoch,
+            'iterations_in_epoch': iter_in_epoch,
             'shuffle': self.shuffle,
         }
 
@@ -305,6 +318,7 @@ class EpochBatchIterator(EpochBatchIterating):
         """Copies the state of the iterator from the given *state_dict*."""
         self.epoch = state_dict['epoch']
         itr_pos = state_dict.get('iterations_in_epoch', 0)
+        version = state_dict.get('version', 1)
         if itr_pos > 0:
             # fast-forward epoch iterator
             self._next_epoch_itr = self._get_iterator_for_epoch(
@@ -313,8 +327,15 @@ class EpochBatchIterator(EpochBatchIterating):
                 offset=itr_pos,
             )
             if self._next_epoch_itr is None:
-                # we finished the epoch, increment epoch counter
-                self.epoch += 1
+                if version == 1:
+                    # legacy behavior: we finished the epoch, increment epoch counter
+                    self.epoch += 1
+                else:
+                    raise RuntimeError(
+                        'Cannot resume training due to dataloader mismatch, please '
+                        'report this to the fairseq developers. You can relaunch '
+                        'training with `--reset-dataloader` and it should work.'
+                    )
         else:
             self._next_epoch_itr = None
 

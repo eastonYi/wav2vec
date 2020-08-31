@@ -11,8 +11,8 @@ import sys
 
 import torch
 
-from utils import checkpoint_utils, distributed_utils, options, utils
-from utils import metrics, progress_bar
+from fairseq import checkpoint_utils, distributed_utils, options, utils
+from logging import metrics, progress_bar
 
 
 logging.basicConfig(

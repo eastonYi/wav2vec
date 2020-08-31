@@ -6,9 +6,9 @@
 import torch
 import torch.nn.functional as F
 
-from utils import utils
+from fairseq import utils
 from .conv_tbc import ConvTBC
-from utils.incremental_decoding_utils import with_incremental_state
+from fairseq.incremental_decoding_utils import with_incremental_state
 
 
 @with_incremental_state

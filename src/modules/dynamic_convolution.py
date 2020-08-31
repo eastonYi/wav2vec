@@ -7,10 +7,10 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from utils import utils
+from fairseq import utils
 from .unfold import unfold1d
-from utils.incremental_decoding_utils import with_incremental_state
-from modules.fairseq_dropout import FairseqDropout
+from fairseq.incremental_decoding_utils import with_incremental_state
+from fairseq.modules.fairseq_dropout import FairseqDropout
 
 
 def DynamicConv(input_size, kernel_size=1, padding_l=None, num_heads=1,
@@ -19,7 +19,7 @@ def DynamicConv(input_size, kernel_size=1, padding_l=None, num_heads=1,
                 query_size=None, in_proj=False):
     if torch.cuda.is_available():
         try:
-            from modules.dynamicconv_layer import DynamicconvLayer
+            from fairseq.modules.dynamicconv_layer import DynamicconvLayer
             return DynamicconvLayer(input_size, kernel_size=kernel_size,
                                     padding_l=padding_l, num_heads=num_heads,
                                     weight_dropout=weight_dropout,

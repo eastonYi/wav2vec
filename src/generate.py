@@ -16,9 +16,9 @@ import numpy as np
 
 import torch
 
-from utils import checkpoint_utils, options, scoring, tasks, utils
-from utils import progress_bar
-from utils.meters import StopwatchMeter, TimeMeter
+from fairseq import checkpoint_utils, options, scoring, tasks, utils
+from logging import progress_bar
+from logging.meters import StopwatchMeter, TimeMeter
 from dataload import encoders
 
 
@@ -150,8 +150,12 @@ def _main(args, output_file):
         if args.prefix_size > 0:
             prefix_tokens = sample['target'][:, :args.prefix_size]
 
+        constraints = None
+        if "constraints" in sample:
+            constraints = sample["constraints"]
+
         gen_timer.start()
-        hypos = task.inference_step(generator, models, sample, prefix_tokens)
+        hypos = task.inference_step(generator, models, sample, prefix_tokens=prefix_tokens, constraints=constraints)
         num_generated_tokens = sum(len(h[0]['tokens']) for h in hypos)
         gen_timer.stop(num_generated_tokens)
 

@@ -8,8 +8,8 @@ import math
 import torch
 import torch.nn.functional as F
 
-from utils import metrics, utils
-from criterions import FairseqCriterion, register_criterion
+from fairseq import metrics, utils
+from fairseq.criterions import FairseqCriterion, register_criterion
 
 
 @register_criterion('sentence_prediction')

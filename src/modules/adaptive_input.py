@@ -6,7 +6,7 @@
 
 import torch
 from torch import nn
-from modules.quant_noise import quant_noise
+from fairseq.modules.quant_noise import quant_noise
 
 from typing import List
 

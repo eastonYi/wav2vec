@@ -11,8 +11,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from utils import checkpoint_utils
-from models import (
+from fairseq import checkpoint_utils
+from fairseq.models import (
     CompositeEncoder,
     FairseqDecoder,
     FairseqEncoder,
@@ -20,7 +20,7 @@ from models import (
     register_model,
     register_model_architecture,
 )
-from modules import (
+from fairseq.modules import (
     FairseqDropout,
     DownsampledMultiHeadAttention,
     GradMultiply,
@@ -28,7 +28,7 @@ from modules import (
     LearnedPositionalEmbedding,
     LinearizedConvolution,
 )
-from utils.incremental_decoding_utils import with_incremental_state
+from fairseq.incremental_decoding_utils import with_incremental_state
 
 logger = logging.getLogger(__name__)
 
@@ -545,7 +545,7 @@ def LinearizedConv1d(in_channels, out_channels, kernel_size, dropout=0., **kwarg
 
 def ConvTBC(in_channels, out_channels, kernel_size, dropout=0., **kwargs):
     """Weight-normalized Conv1d layer"""
-    from modules import ConvTBC
+    from fairseq.modules import ConvTBC
     m = ConvTBC(in_channels, out_channels, kernel_size, **kwargs)
     std = math.sqrt((4 * (1.0 - dropout)) / (m.kernel_size[0] * in_channels))
     m.weight.data.normal_(mean=0, std=std)

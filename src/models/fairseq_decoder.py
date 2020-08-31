@@ -4,8 +4,9 @@
 # LICENSE file in the root directory of this source tree.
 
 from typing import Dict, List, Optional, Tuple
+
 import torch.nn as nn
-from utils import utils
+from fairseq import utils
 from torch import Tensor
 
 

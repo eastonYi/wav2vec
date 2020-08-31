@@ -8,16 +8,16 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import torch
 import torch.nn as nn
-from utils import utils
-from models import (
+from fairseq import options, utils
+from fairseq.models import (
     FairseqEncoder,
     FairseqEncoderDecoderModel,
     FairseqIncrementalDecoder,
     register_model,
     register_model_architecture,
 )
-from models.fairseq_encoder import EncoderOut
-from modules import (
+from fairseq.models.fairseq_encoder import EncoderOut
+from fairseq.modules import (
     AdaptiveSoftmax,
     FairseqDropout,
     LayerDropModuleList,
@@ -27,7 +27,7 @@ from modules import (
     TransformerDecoderLayer,
     TransformerEncoderLayer,
 )
-from modules.quant_noise import quant_noise as apply_quant_noise_
+from fairseq.modules.quant_noise import quant_noise as apply_quant_noise_
 from torch import Tensor
 
 
@@ -301,7 +301,7 @@ class TransformerEncoder(FairseqEncoder):
 
     Args:
         args (argparse.Namespace): parsed command-line arguments
-        dictionary (~dataload.Dictionary): encoding dictionary
+        dictionary (~fairseq.data.Dictionary): encoding dictionary
         embed_tokens (torch.nn.Embedding): input embedding
     """
 
@@ -520,7 +520,7 @@ class TransformerDecoder(FairseqIncrementalDecoder):
 
     Args:
         args (argparse.Namespace): parsed command-line arguments
-        dictionary (~dataload.Dictionary): decoding dictionary
+        dictionary (~fairseq.data.Dictionary): decoding dictionary
         embed_tokens (torch.nn.Embedding): output embedding
         no_encoder_attn (bool, optional): whether to attend to encoder outputs
             (default: False).
@@ -612,7 +612,7 @@ class TransformerDecoder(FairseqIncrementalDecoder):
             self.adaptive_softmax = AdaptiveSoftmax(
                 len(dictionary),
                 self.output_embed_dim,
-                utils.eval_str_list(args.adaptive_softmax_cutoff, type=int),
+                options.eval_str_list(args.adaptive_softmax_cutoff, type=int),
                 dropout=args.adaptive_softmax_dropout,
                 adaptive_inputs=embed_tokens if args.tie_adaptive_weights else None,
                 factor=args.adaptive_softmax_factor,

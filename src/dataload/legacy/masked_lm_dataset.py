@@ -13,9 +13,9 @@ from typing import Dict, List, Tuple
 from dataload import FairseqDataset, data_utils
 
 from dataload import Dictionary
-from dataload.legacy.block_pair_dataset import BlockPairDataset
-from dataload.token_block_dataset import TokenBlockDataset
-from dataload.concat_dataset import ConcatDataset
+from fairseq.data.legacy.block_pair_dataset import BlockPairDataset
+from fairseq.data.token_block_dataset import TokenBlockDataset
+from fairseq.data.concat_dataset import ConcatDataset
 
 
 class MaskedLMDataset(FairseqDataset):

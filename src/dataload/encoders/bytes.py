@@ -4,8 +4,8 @@
 # LICENSE file in the root directory of this source tree.
 
 
-from dataload.encoders import register_bpe
-from dataload.encoders.byte_utils import (byte_encode, smart_byte_decode,
+from fairseq.data.encoders import register_bpe
+from fairseq.data.encoders.byte_utils import (byte_encode, smart_byte_decode,
                                               SPACE, SPACE_ESCAPE)
 
 

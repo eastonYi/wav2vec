@@ -3,8 +3,8 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from utils import file_utils
-from dataload.encoders import register_bpe
+from fairseq import file_utils
+from fairseq.data.encoders import register_bpe
 
 from .gpt2_bpe_utils import get_encoder
 

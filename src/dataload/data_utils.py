@@ -60,7 +60,7 @@ def load_indexed_dataset(path, dictionary=None, dataset_impl=None, combine=False
 
     Args:
         path (str): path to indexed dataset (e.g., 'data-bin/train')
-        dictionary (~dataload.Dictionary): data dictionary
+        dictionary (~fairseq.data.Dictionary): data dictionary
         dataset_impl (str, optional): which dataset implementation to use. If
             not provided, it will be inferred automatically. For legacy indexed
             data we use the 'cached' implementation by default.
@@ -69,8 +69,8 @@ def load_indexed_dataset(path, dictionary=None, dataset_impl=None, combine=False
             combine 'data-bin/train', 'data-bin/train1', ... and return a
             single ConcatDataset instance.
     """
-    from dataload.concat_dataset import ConcatDataset
-    import dataload.indexed_dataset as indexed_dataset
+    from fairseq.data.concat_dataset import ConcatDataset
+    import fairseq.data.indexed_dataset as indexed_dataset
 
     datasets = []
     for k in itertools.count():
@@ -242,7 +242,6 @@ def batch_by_size(
     except ImportError:
         raise ImportError(
             'Please build Cython components with: `pip install --editable .` '
-            'or `python setup.py build_ext --inplace`'
         )
 
     max_tokens = max_tokens if max_tokens is not None else -1

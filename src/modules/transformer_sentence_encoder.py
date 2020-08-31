@@ -7,7 +7,7 @@ from typing import Optional, Tuple
 
 import torch
 import torch.nn as nn
-from modules import (
+from fairseq.modules import (
     FairseqDropout,
     LayerDropModuleList,
     LayerNorm,
@@ -15,7 +15,7 @@ from modules import (
     PositionalEmbedding,
     TransformerSentenceEncoderLayer,
 )
-from modules.quant_noise import quant_noise as apply_quant_noise_
+from fairseq.modules.quant_noise import quant_noise as apply_quant_noise_
 
 
 def init_bert_params(module):

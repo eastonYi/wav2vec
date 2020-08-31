@@ -6,8 +6,8 @@
 import importlib
 import os
 
-from utils import registry
-from optim.lr_scheduler.fairseq_lr_scheduler import FairseqLRScheduler
+from fairseq import registry
+from fairseq.optim.lr_scheduler.fairseq_lr_scheduler import FairseqLRScheduler
 
 
 build_lr_scheduler, register_lr_scheduler, LR_SCHEDULER_REGISTRY = registry.setup_registry(
@@ -20,4 +20,4 @@ build_lr_scheduler, register_lr_scheduler, LR_SCHEDULER_REGISTRY = registry.setu
 for file in os.listdir(os.path.dirname(__file__)):
     if file.endswith('.py') and not file.startswith('_'):
         module = file[:file.find('.py')]
-        importlib.import_module('optim.lr_scheduler.' + module)
+        importlib.import_module('fairseq.optim.lr_scheduler.' + module)

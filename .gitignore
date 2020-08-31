@@ -1,3 +1,5 @@
+.remote*
+
 # JetBrains PyCharm IDE
 .idea/
 

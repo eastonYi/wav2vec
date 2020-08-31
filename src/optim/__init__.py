@@ -6,7 +6,7 @@
 import importlib
 import os
 
-from utils import registry
+import registry
 from optim.fairseq_optimizer import FairseqOptimizer
 
 

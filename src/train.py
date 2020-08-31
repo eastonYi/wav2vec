@@ -1,21 +1,38 @@
+#!/usr/bin/env python3 -u
+# Copyright (c) Facebook, Inc. and its affiliates.
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+"""
+Train a new model on one or across multiple GPUs.
+"""
+
+import logging
 import math
+import sys
 import numpy as np
 import torch
-import yaml
 
-from utils import (
+from tools import (
     checkpoint_utils,
     distributed_utils,
     options,
     quantization_utils,
     utils,
-    meters,
-    metrics,
-    progress_bar
 )
 import tasks
 from dataload import iterators
+from logging import meters, metrics, progress_bar
 from trainer import Trainer
+
+
+logging.basicConfig(
+    format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+    level=logging.INFO,
+    stream=sys.stdout,
+)
+logger = logging.getLogger("fairseq_cli.train")
 
 
 def main(args):
@@ -34,7 +51,7 @@ def main(args):
         checkpoint_utils.verify_checkpoint_directory(args.save_dir)
 
     # Print args
-    print(args)
+    logger.info(args)
 
     # Setup task, e.g., translation, language modeling, etc.
     task = tasks.setup_task(args)
@@ -46,11 +63,13 @@ def main(args):
     # Build model and criterion
     model = task.build_model(args)
     criterion = task.build_criterion(args)
-    print(model)
-    print("task: {} ({})".format(args.task, task.__class__.__name__))
-    print("model: {} ({})".format(args.arch, model.__class__.__name__))
-    print("criterion: {} ({})".format(args.criterion, criterion.__class__.__name__))
-    print(
+    logger.info(model)
+    logger.info("task: {} ({})".format(args.task, task.__class__.__name__))
+    logger.info("model: {} ({})".format(args.arch, model.__class__.__name__))
+    logger.info(
+        "criterion: {} ({})".format(args.criterion, criterion.__class__.__name__)
+    )
+    logger.info(
         "num. model params: {} (num. trained: {})".format(
             sum(p.numel() for p in model.parameters()),
             sum(p.numel() for p in model.parameters() if p.requires_grad),
@@ -68,10 +87,15 @@ def main(args):
         quantizer = None
 
     # Build trainer
-    trainer = Trainer(args, task, model, criterion, quantizer)
+    if args.model_parallel_size == 1:
+        trainer = Trainer(args, task, model, criterion, quantizer)
+    else:
+        raise NotImplementedError('here')
 
-    print("training on {} devices (GPUs/TPUs)".format(args.distributed_world_size))
-    print(
+    logger.info(
+        "training on {} devices (GPUs/TPUs)".format(args.distributed_world_size)
+    )
+    logger.info(
         "max tokens per GPU = {} and max sentences per GPU = {}".format(
             args.max_tokens, args.max_sentences
         )
@@ -102,7 +126,7 @@ def main(args):
             load_dataset=task.has_sharded_data("train"),
         )
     train_meter.stop()
-    print("done training in {:.1f} seconds".format(train_meter.sum))
+    logger.info("done training in {:.1f} seconds".format(train_meter.sum))
 
 
 def should_stop_early(args, valid_loss):
@@ -123,7 +147,7 @@ def should_stop_early(args, valid_loss):
     else:
         should_stop_early.num_runs += 1
         if should_stop_early.num_runs >= args.patience:
-            print(
+            logger.info(
                 "early stop since valid performance hasn't improved for last {} runs".format(
                     args.patience
                 )
@@ -147,12 +171,25 @@ def train(args, trainer, task, epoch_itr):
         else args.update_freq[-1]
     )
     itr = iterators.GroupedIterator(itr, update_freq)
+    if getattr(args, "tpu", False):
+        itr = utils.tpu_data_loader(itr)
+    progress = progress_bar.progress_bar(
+        itr,
+        log_format=args.log_format,
+        log_interval=args.log_interval,
+        epoch=epoch_itr.epoch,
+        tensorboard_logdir=(
+            args.tensorboard_logdir if distributed_utils.is_master(args) else None
+        ),
+        default_log_format=("tqdm" if not args.no_progress_bar else "simple"),
+    )
+
     trainer.begin_epoch(epoch_itr.epoch)
 
     valid_subsets = args.valid_subset.split(",")
     should_stop = False
     num_updates = trainer.get_num_updates()
-    for i, samples in enumerate(itr):
+    for i, samples in enumerate(progress):
         with metrics.aggregate("train_inner"), torch.autograd.profiler.record_function(
             "train_step-%d" % i
         ):
@@ -163,6 +200,7 @@ def train(args, trainer, task, epoch_itr):
             num_updates = trainer.get_num_updates()
             if num_updates % args.log_interval == 0:
                 stats = get_training_stats(metrics.get_smoothed_values("train_inner"))
+                progress.log(stats, tag="train_inner", step=num_updates)
 
                 # reset mid-epoch stats after each log interval
                 # the end-of-epoch stats will still be preserved
@@ -177,8 +215,9 @@ def train(args, trainer, task, epoch_itr):
             break
 
     # log end-of-epoch stats
-    print("end of epoch {} (average epoch stats below)".format(epoch_itr.epoch))
+    logger.info("end of epoch {} (average epoch stats below)".format(epoch_itr.epoch))
     stats = get_training_stats(metrics.get_smoothed_values("train"))
+    progress.print(stats, tag="train", step=num_updates)
 
     # reset epoch-level meters
     metrics.reset_meters("train")
@@ -196,7 +235,7 @@ def validate_and_save(args, trainer, task, epoch_itr, valid_subsets, end_of_epoc
     do_validate = (
         (not end_of_epoch and do_save)  # validate during mid-epoch saves
         or (end_of_epoch and epoch_itr.epoch % args.validate_interval == 0)
-        or (args.validate_interval_updates > 0 and num_updates % args.validate_interval_updates == 0)
+        or (args.validate_interval_updates > 0 and num_updates > 0 and num_updates % args.validate_interval_updates == 0)
     ) and not args.disable_validation
 
     # Validate
@@ -217,7 +256,7 @@ def validate_and_save(args, trainer, task, epoch_itr, valid_subsets, end_of_epoc
 
     # Save checkpoint
     if do_save or should_stop:
-        print("begin save checkpoint")
+        logger.info("begin save checkpoint")
         checkpoint_utils.save_checkpoint(args, trainer, epoch_itr, valid_losses[0])
 
     return valid_losses, should_stop
@@ -237,7 +276,7 @@ def validate(args, trainer, task, epoch_itr, subsets):
 
     valid_losses = []
     for subset in subsets:
-        print('begin validation on "{}" subset'.format(subset))
+        logger.info('begin validation on "{}" subset'.format(subset))
 
         # Initialize data iterator
         itr = trainer.get_valid_iterator(subset).next_epoch_itr(shuffle=False)
@@ -281,8 +320,8 @@ def get_valid_stats(args, trainer, stats):
 
 
 def cli_main(modify_parser=None):
-    import sys
-    args = utils.AttrDict(yaml.load(open(sys.argv[1])))
+    parser = options.get_training_parser()
+    args = options.parse_args_and_arch(parser, modify_parser=modify_parser)
     distributed_utils.call_main(args, main)
 
 

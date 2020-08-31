@@ -9,9 +9,9 @@ from torch.autograd import Function
 import torch.nn.functional as F
 
 import lightconv_cuda
-from utils import utils
-from utils.incremental_decoding_utils import with_incremental_state
-from modules.fairseq_dropout import FairseqDropout
+from fairseq import utils
+from fairseq.incremental_decoding_utils import with_incremental_state
+from fairseq.modules.fairseq_dropout import FairseqDropout
 
 
 class lightconvFunction(Function):

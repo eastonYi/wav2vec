@@ -8,7 +8,7 @@ from typing import Dict, Optional
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from utils import utils
+from fairseq import utils
 from torch import Tensor
 
 

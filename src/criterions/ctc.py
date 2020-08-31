@@ -9,10 +9,10 @@ import math
 
 import torch
 import torch.nn.functional as F
-from utils import metrics, utils
-from dataload.data_utils import post_process
-from criterions import FairseqCriterion, register_criterion
-from utils.meters import safe_round
+from fairseq import metrics, utils
+from fairseq.data.data_utils import post_process
+from fairseq.criterions import FairseqCriterion, register_criterion
+from logging.meters import safe_round
 
 
 @register_criterion("ctc")

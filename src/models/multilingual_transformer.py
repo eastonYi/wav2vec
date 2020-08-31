@@ -5,7 +5,7 @@
 
 from collections import OrderedDict
 
-from fairseq import utils
+from tools import utils
 from models import (
     FairseqMultiModel,
     register_model,

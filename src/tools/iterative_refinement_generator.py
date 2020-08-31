@@ -8,7 +8,7 @@ from collections import namedtuple
 import torch
 import numpy as np
 
-from fairseq import utils
+from tools import utils
 
 
 DecoderOut = namedtuple('IterativeRefinementDecoderOut', [

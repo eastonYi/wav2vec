@@ -8,7 +8,7 @@ from typing import Callable, Optional
 import torch
 import torch.nn as nn
 
-from fairseq import utils
+from tools import utils
 from modules import (
     LayerNorm,
     MultiheadAttention,

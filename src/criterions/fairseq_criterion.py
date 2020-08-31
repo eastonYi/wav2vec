@@ -8,7 +8,8 @@ from typing import Any, Dict, List
 
 from torch.nn.modules.loss import _Loss
 
-from fairseq import metrics, utils
+from loggings import metrics
+from tools import utils
 
 
 class FairseqCriterion(_Loss):

@@ -8,7 +8,7 @@ import math
 import torch
 import torch.nn.functional as F
 
-from fairseq import metrics, utils
+from loggings import metrics, utils
 from fairseq.criterions import FairseqCriterion, register_criterion
 from loggings.meters import safe_round
 

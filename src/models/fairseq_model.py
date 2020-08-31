@@ -12,7 +12,7 @@ from typing import Dict, List, Optional, Tuple
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from fairseq import utils
+from tools import utils
 from fairseq.checkpoint_utils import prune_state_dict
 from dataload import Dictionary
 from models import FairseqDecoder, FairseqEncoder

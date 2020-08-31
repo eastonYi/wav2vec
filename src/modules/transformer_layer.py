@@ -7,7 +7,7 @@ from typing import Dict, List, Optional
 
 import torch
 import torch.nn as nn
-from fairseq import utils
+from tools import utils
 from modules import LayerNorm, MultiheadAttention
 from modules.quant_noise import quant_noise
 from modules.fairseq_dropout import FairseqDropout

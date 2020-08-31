@@ -17,7 +17,7 @@ from typing import Any, Dict, Mapping
 import torch
 import torch.distributed as dist
 
-from fairseq import utils
+from tools import utils
 
 
 logger = logging.getLogger(__name__)

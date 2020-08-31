@@ -8,7 +8,7 @@ from collections import Counter
 from multiprocessing import Pool
 
 import torch
-from fairseq import utils
+from tools import utils
 from fairseq.binarizer import safe_readline
 from dataload import data_utils
 from fairseq.file_io import PathManager

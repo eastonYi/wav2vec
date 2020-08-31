@@ -19,7 +19,7 @@ from modules import (
     KmeansVectorQuantizer,
     TransposeLast,
 )
-from utils.utils import buffered_arange
+from tools.utils import buffered_arange
 
 logger = logging.getLogger(__name__)
 

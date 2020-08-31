@@ -7,7 +7,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from fairseq import utils
+from tools import utils
 from .unfold import unfold1d
 from fairseq.incremental_decoding_utils import with_incremental_state
 from modules.fairseq_dropout import FairseqDropout

@@ -303,7 +303,6 @@ def validate(args, trainer, task, epoch_itr, subsets):
         # log validation stats
         stats = get_valid_stats(args, trainer, agg.get_smoothed_values())
         progress.print(stats, tag=subset, step=trainer.get_num_updates())
-
         valid_losses.append(stats[args.best_checkpoint_metric])
     return valid_losses
 

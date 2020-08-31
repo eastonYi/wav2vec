@@ -8,7 +8,7 @@ from typing import Any, Optional
 
 import torch
 import torch.onnx.operators
-from fairseq import utils
+from tools import utils
 from torch import Tensor, nn
 
 

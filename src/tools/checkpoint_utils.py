@@ -287,7 +287,7 @@ def save_state(
     optim_history=None,
     extra_state=None,
 ):
-    from fairseq import utils
+    from tools import utils
 
     if optim_history is None:
         optim_history = []

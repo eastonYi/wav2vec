@@ -13,7 +13,6 @@ import logging
 import sys
 import time
 from typing import Any, Dict, List
-
 import torch
 
 from tools import checkpoint_utils, distributed_utils, utils

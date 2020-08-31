@@ -9,7 +9,7 @@ from torch.autograd import Function
 import torch.nn.functional as F
 
 import dynamicconv_cuda
-from fairseq import utils
+from tools import utils
 from modules.unfold import unfold1d
 from fairseq.incremental_decoding_utils import with_incremental_state
 from modules.fairseq_dropout import FairseqDropout

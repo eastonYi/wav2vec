@@ -12,7 +12,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from utils import checkpoint_utils, utils
+from tools import checkpoint_utils, utils
 import tasks
 
 from models import (

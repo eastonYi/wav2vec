@@ -13,7 +13,7 @@ from typing import List, Dict, Iterator, Tuple, Any
 import torch
 from torch import nn
 
-from fairseq import utils
+from tools import utils
 from dataload import encoders
 
 

@@ -9,7 +9,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from fairseq import utils
+from tools import utils
 from models import (
     FairseqEncoderModel,
     FairseqEncoder,

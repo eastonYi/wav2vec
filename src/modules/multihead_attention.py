@@ -11,7 +11,7 @@ import torch.nn.functional as F
 from torch import Tensor, nn
 from torch.nn import Parameter
 
-from fairseq import utils
+from tools import utils
 from fairseq.incremental_decoding_utils import with_incremental_state
 from modules.fairseq_dropout import FairseqDropout
 from modules.quant_noise import quant_noise

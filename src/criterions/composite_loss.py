@@ -5,7 +5,7 @@
 
 from torch import nn
 
-from fairseq import utils
+from tools import utils
 from fairseq.criterions import FairseqCriterion, register_criterion
 
 

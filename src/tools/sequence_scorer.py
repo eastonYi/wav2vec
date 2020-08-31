@@ -6,7 +6,7 @@
 import torch
 import sys
 
-from fairseq import utils
+from tools import utils
 
 
 class SequenceScorer(object):

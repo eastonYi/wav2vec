@@ -2,8 +2,6 @@
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
-
-import logging
 import math
 import numpy as np
 
@@ -13,7 +11,7 @@ import torch.nn.functional as F
 
 from typing import List, Tuple
 
-from utils import utils
+from tools import utils
 from dataload.data_utils import compute_mask_indices
 from models import BaseFairseqModel, register_model, register_model_architecture
 from modules import (
@@ -27,7 +25,7 @@ from modules import (
     TransposeLast,
 )
 from modules.transformer_sentence_encoder import init_bert_params
-from utils.utils import buffered_arange
+from tools.utils import buffered_arange
 
 
 @register_model("wav2vec2")

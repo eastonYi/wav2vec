@@ -5,7 +5,8 @@
 
 import math
 
-from loggings import metrics, utils
+from loggings import metrics
+from tools import utils
 from criterions import register_criterion
 
 from .label_smoothed_cross_entropy import LabelSmoothedCrossEntropyCriterion

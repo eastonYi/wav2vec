@@ -9,7 +9,8 @@ import math
 
 import torch
 import torch.nn.functional as F
-from loggings import metrics, utils
+from loggings import metrics
+from tools import utils
 from dataload.data_utils import post_process
 from criterions import FairseqCriterion, register_criterion
 from loggings.meters import safe_round

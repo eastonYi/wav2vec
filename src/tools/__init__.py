@@ -1,9 +1,11 @@
-# Copyright (c) Facebook, Inc. and its affiliates.
-#
-# This source code is licensed under the MIT license found in the
-# LICENSE file in the root directory of this source tree.
+from loggings import meters, metrics, progress_bar  # noqa
 
-__all__ = ['pdb']
-__version__ = '0.9.0'
-
-# backwards compatibility to support `from fairseq.meters import AverageMeter`
+import criterions  # noqa
+import models  # noqa
+import modules  # noqa
+import optim  # noqa
+import optim.lr_scheduler  # noqa
+import pdb  # noqa
+import scoring  # noqa
+import tasks  # noqa
+from . import token_generation_constraints  # noqa

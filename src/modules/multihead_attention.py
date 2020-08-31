@@ -80,13 +80,9 @@ class MultiheadAttention(nn.Module):
         self.reset_parameters()
 
         self.onnx_trace = False
-        self.tpu = False
 
     def prepare_for_onnx_export_(self):
         self.onnx_trace = True
-
-    def prepare_for_tpu_(self, **kwargs):
-        self.tpu = True
 
     def reset_parameters(self):
         if self.qkv_same_dim:
@@ -147,7 +143,6 @@ class MultiheadAttention(nn.Module):
 
         if (
             not self.onnx_trace
-            and not self.tpu  # don't use PyTorch version on TPUs
             and incremental_state is None
             and not static_kv
             # A workaround for quantization to work. Otherwise JIT compilation
@@ -330,15 +325,10 @@ class MultiheadAttention(nn.Module):
         if key_padding_mask is not None:
             # don't attend to padding symbols
             attn_weights = attn_weights.view(bsz, self.num_heads, tgt_len, src_len)
-            if not self.tpu:
-                attn_weights = attn_weights.masked_fill(
-                    key_padding_mask.unsqueeze(1).unsqueeze(2).to(torch.bool),
-                    float("-inf")
-                )
-            else:
-                attn_weights = attn_weights.transpose(0, 2)
-                attn_weights = attn_weights.masked_fill(key_padding_mask, float('-inf'))
-                attn_weights = attn_weights.transpose(0, 2)
+            attn_weights = attn_weights.masked_fill(
+                key_padding_mask.unsqueeze(1).unsqueeze(2).to(torch.bool),
+                float("-inf")
+            )
             attn_weights = attn_weights.view(bsz * self.num_heads, tgt_len, src_len)
 
         if before_softmax:

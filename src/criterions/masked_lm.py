@@ -4,11 +4,11 @@
 # LICENSE file in the root directory of this source tree.
 
 import math
-
 import torch
-import torch.nn.functional as F
 
-from loggings import metrics, modules, utils
+from loggings import metrics
+import modules
+from tools import utils
 from criterions import FairseqCriterion, register_criterion
 
 
@@ -18,9 +18,8 @@ class MaskedLmLoss(FairseqCriterion):
     Implementation for the loss used in masked language model (MLM) training.
     """
 
-    def __init__(self, task, tpu=False):
+    def __init__(self, task):
         super().__init__(task)
-        self.tpu = tpu
 
     def forward(self, model, sample, reduce=True):
         """Compute the loss for the given sample.
@@ -37,9 +36,7 @@ class MaskedLmLoss(FairseqCriterion):
         # We use torch.where to avoid device-to-host transfers,
         # except on CPU where torch.where is not well supported
         # (see github.com/pytorch/pytorch/issues/26247).
-        if self.tpu:
-            masked_tokens = None  # always project all tokens on TPU
-        elif masked_tokens.device == torch.device('cpu'):
+        if masked_tokens.device == torch.device('cpu'):
             if not masked_tokens.any():
                 masked_tokens = None
         else:
@@ -62,7 +59,7 @@ class MaskedLmLoss(FairseqCriterion):
         )
 
         logging_output = {
-            'loss': loss if self.tpu else loss.data,
+            'loss': loss.data,
             'ntokens': sample['ntokens'],
             'nsentences': sample['nsentences'],
             'sample_size': sample_size,

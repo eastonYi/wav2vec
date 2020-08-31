@@ -70,7 +70,7 @@ def load_indexed_dataset(path, dictionary=None, dataset_impl=None, combine=False
             single ConcatDataset instance.
     """
     from dataload.concat_dataset import ConcatDataset
-    import fairseq.data.indexed_dataset as indexed_dataset
+    import dataload.indexed_dataset as indexed_dataset
 
     datasets = []
     for k in itertools.count():
@@ -236,7 +236,7 @@ def batch_by_size(
             *required_batch_size_multiple* will be ignored (default: None).
     """
     try:
-        from dataload.data_utils_fast import (
+        from fairseq.data.data_utils_fast import (
             batch_by_size_fast, batch_fixed_shapes_fast,
         )
     except ImportError:

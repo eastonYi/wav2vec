@@ -9,7 +9,8 @@ import torch.nn.functional as F
 import torch
 from torch import Tensor
 
-from loggings import metrics, utils
+from loggings import metrics
+from tools import utils
 from criterions import FairseqCriterion, register_criterion
 
 

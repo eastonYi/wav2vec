@@ -6,7 +6,6 @@
 import argparse
 import sys
 from typing import Callable, List, Optional
-
 import torch
 
 from tools import utils
@@ -22,6 +21,7 @@ def get_preprocessing_parser(default_task="translation"):
 def get_training_parser(default_task="translation"):
     parser = get_parser("Trainer", default_task)
     add_dataset_args(parser, train=True)
+    add_generation_args(parser)
     add_distributed_training_args(parser)
     add_model_args(parser)
     add_optimization_args(parser)
@@ -172,7 +172,6 @@ def parse_args_and_arch(
         from optim.bmuf import FairseqBMUF
 
         FairseqBMUF.add_args(parser)
-
     # Modify the parser a second time, since defaults may have been reset
     if modify_parser is not None:
         modify_parser(parser)
@@ -189,16 +188,6 @@ def parse_args_and_arch(
         args.max_sentences_valid = args.max_sentences
     if hasattr(args, "max_tokens_valid") and args.max_tokens_valid is None:
         args.max_tokens_valid = args.max_tokens
-    if getattr(args, "memory_efficient_fp16", False):
-        args.fp16 = True
-    if getattr(args, "memory_efficient_bf16", False):
-        args.bf16 = True
-    args.tpu = getattr(args, "tpu", False)
-    args.bf16 = getattr(args, "bf16", False)
-    if args.bf16:
-        args.tpu = True
-    if args.tpu and args.fp16:
-        raise ValueError("Cannot combine --fp16 and --tpu, use --bf16 on TPUs")
 
     if getattr(args, "seed", None) is None:
         args.seed = 1  # default seed for training
@@ -209,7 +198,6 @@ def parse_args_and_arch(
     # Apply architecture configuration.
     if hasattr(args, "arch"):
         ARCH_CONFIG_REGISTRY[args.arch](args)
-
     if parse_known:
         return args, extra
     else:
@@ -237,11 +225,7 @@ def get_parser(desc, default_task="translation"):
     parser.add_argument('--seed', default=None, type=int, metavar='N',
                         help='pseudo random number generator seed')
     parser.add_argument('--cpu', action='store_true', help='use CPU instead of CUDA')
-    parser.add_argument('--tpu', action='store_true', help='use TPU instead of CUDA')
-    parser.add_argument('--bf16', action='store_true', help='use bfloat16; implies --tpu')
     parser.add_argument('--fp16', action='store_true', help='use FP16')
-    parser.add_argument('--memory-efficient-bf16', action='store_true',
-                        help='use a memory-efficient version of BF16 training; implies --bf16')
     parser.add_argument('--memory-efficient-fp16', action='store_true',
                         help='use a memory-efficient version of FP16 training; implies --fp16')
     parser.add_argument('--fp16-no-flatten-grads', action='store_true',

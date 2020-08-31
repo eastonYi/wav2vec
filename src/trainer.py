@@ -44,27 +44,18 @@ class Trainer(object):
         # catalog shared parameters
         shared_params = _catalog_shared_params(model)
 
-        self.tpu = getattr(args, 'tpu', False)
-        self.cuda = torch.cuda.is_available() and not args.cpu and not self.tpu
+        self.cuda = torch.cuda.is_available() and not args.cpu
         if self.cuda:
             self.device = torch.device('cuda')
-        elif self.tpu:
-            self.device = utils.get_tpu_device(args)
         else:
             self.device = torch.device('cpu')
 
         # copy model and criterion to current device/dtype
         self._criterion = criterion
         self._model = model
-        if self.tpu:
-            import torch_xla.core.xla_model as xm
-            self._model = xm.send_cpu_data_to_device(self._model, self.device)
         if args.fp16:
             self._criterion = self._criterion.half()
             self._model = self._model.half()
-        elif args.bf16:
-            self._criterion = self._criterion.to(dtype=torch.bfloat16)
-            self._model = self._model.to(dtype=torch.bfloat16)
         self._criterion = self._criterion.to(device=self.device)
         self._model = self._model.to(device=self.device)
 
@@ -129,10 +120,7 @@ class Trainer(object):
 
     @property
     def data_parallel_process_group(self):
-        if self.tpu:
-            return ('tpu', None)
-        else:
-            return None
+        return None
 
     @property
     def data_parallel_rank(self):
@@ -149,7 +137,6 @@ class Trainer(object):
                 utils.has_parameters(self._criterion)
                 and self.data_parallel_world_size > 1
                 and not self.args.use_bmuf
-                and not self.tpu
             ):
                 self._wrapped_criterion = models.DistributedFairseqModel(
                     self.args, self._criterion,
@@ -165,7 +152,6 @@ class Trainer(object):
             if (
                 self.data_parallel_world_size > 1
                 and not self.args.use_bmuf
-                and not self.tpu
             ):
                 self._wrapped_model = models.DistributedFairseqModel(
                     self.args, self._model,
@@ -195,7 +181,7 @@ class Trainer(object):
             )
         )
 
-        if self.args.fp16 or self.args.bf16:
+        if self.args.fp16:
             if self.cuda and torch.cuda.get_device_capability(0)[0] < 7:
                 logger.info(
                     "NOTE: your device does NOT support faster training with --fp16, "
@@ -382,12 +368,6 @@ class Trainer(object):
         # task specific setup per epoch
         self.task.begin_epoch(epoch, self.get_model())
 
-        if self.tpu:
-            import torch_xla.core.xla_model as xm
-
-            xm.rendezvous('begin_epoch')  # wait for all workers
-            xm.mark_step()
-
     @metrics.aggregate("train")
     def train_step(self, samples, raise_oom=False):
         """Do forward, backward and parameter update."""
@@ -465,15 +445,6 @@ class Trainer(object):
                 else:
                     raise e
 
-            if self.tpu and i < len(samples) - 1:
-                # tpu-comment: every XLA operation before marking step is
-                # appended to the IR graph, and processing too many batches
-                # before marking step can lead to OOM errors.
-                # To handle gradient accumulation use case, we explicitly
-                # mark step here for every forward pass without a backward pass
-                import torch_xla.core.xla_model as xm
-                xm.mark_step()
-
         if is_dummy_batch:
             if torch.is_tensor(sample_size):
                 sample_size.zero_()
@@ -498,11 +469,6 @@ class Trainer(object):
 
         overflow = False
         try:
-            if self.tpu and self.data_parallel_world_size > 1:
-                import torch_xla.core.xla_model as xm
-                gradients = xm._fetch_gradients(self.optimizer.optimizer)
-                xm.all_reduce('sum', gradients, scale=1.0 / self.data_parallel_world_size)
-
             with torch.autograd.profiler.record_function("multiply-grads"):
                 # multiply gradients by (# GPUs / sample_size) since DDP
                 # already normalizes by the number of GPUs. Thus we get
@@ -521,7 +487,6 @@ class Trainer(object):
             if (
                 not self.args.use_bmuf
                 and self.args.distributed_wrapper != 'SlowMo'
-                and not self.tpu
             ):
                 self._check_grad_norms(grad_norm)
 
@@ -558,39 +523,21 @@ class Trainer(object):
         if not overflow or self.args.distributed_wrapper == 'SlowMo':
             self.set_num_updates(self.get_num_updates() + 1)
 
-            if self.tpu:
-                # mark step on TPUs
-                import torch_xla.core.xla_model as xm
-                xm.mark_step()
+            # log stats
+            logging_output = self._reduce_and_log_stats(
+                logging_outputs, sample_size, grad_norm,
+            )
 
-                # only log stats every log_interval steps
-                # this causes wps to be misreported when log_interval > 1
-                logging_output = {}
-                if self.get_num_updates() % self.args.log_interval == 0:
-                    logging_output = self._reduce_and_log_stats(
-                        logging_outputs, sample_size, grad_norm,
-                    )
-
-                # log whenever there's an XLA compilation, since these
-                # slow down training and may indicate opportunities for
-                # optimization
-                self._check_xla_compilation()
-            else:
-                # log stats
-                logging_output = self._reduce_and_log_stats(
-                    logging_outputs, sample_size, grad_norm,
-                )
-
-                # clear CUDA cache to reduce memory fragmentation
-                if (
-                    self.cuda
-                    and self.args.empty_cache_freq > 0
-                    and (
-                        (self.get_num_updates() + self.args.empty_cache_freq - 1)
-                        % self.args.empty_cache_freq
-                    ) == 0
-                ):
-                    torch.cuda.empty_cache()
+            # clear CUDA cache to reduce memory fragmentation
+            if (
+                self.cuda
+                and self.args.empty_cache_freq > 0
+                and (
+                    (self.get_num_updates() + self.args.empty_cache_freq - 1)
+                    % self.args.empty_cache_freq
+                ) == 0
+            ):
+                torch.cuda.empty_cache()
 
         if self.args.fp16:
             metrics.log_scalar(
@@ -610,10 +557,6 @@ class Trainer(object):
         """Do forward pass in evaluation mode."""
         if self._dummy_batch == "DUMMY":
             self._dummy_batch = sample
-        if self.tpu:
-            import torch_xla.core.xla_model as xm
-            xm.rendezvous('valid_step')  # wait for all workers
-            xm.mark_step()
 
         with torch.no_grad():
             self.model.eval()
@@ -784,9 +727,6 @@ class Trainer(object):
         if self.args.fp16:
             sample = utils.apply_to_sample(apply_half, sample)
 
-        if self.args.bf16:
-            sample = utils.apply_to_sample(apply_bfloat16, sample)
-
         return sample
 
     def _set_seed(self):
@@ -841,8 +781,6 @@ class Trainer(object):
         Sync logging outputs across workers. all_gather_list_sync is
         suitable when logging outputs are complex types.
         """
-        if self.tpu:
-            raise NotImplementedError
         if ignore:
             logging_outputs = []
         results = list(zip(
@@ -964,14 +902,11 @@ class Trainer(object):
                 metrics.log_scalar("loss", -1)
 
             # support legacy interface
-            if self.tpu:
-                logging_output = {}
-            else:
-                logging_output = agg.get_smoothed_values()
-                logging_output["sample_size"] = sample_size
-                for key_to_delete in ["ppl", "wps", "wpb", "bsz"]:
-                    if key_to_delete in logging_output:
-                        del logging_output[key_to_delete]
+            logging_output = agg.get_smoothed_values()
+            logging_output["sample_size"] = sample_size
+            for key_to_delete in ["ppl", "wps", "wpb", "bsz"]:
+                if key_to_delete in logging_output:
+                    del logging_output[key_to_delete]
             return logging_output
 
     def _check_xla_compilation(self, message=None):

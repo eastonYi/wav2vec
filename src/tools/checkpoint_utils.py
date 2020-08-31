@@ -10,10 +10,9 @@ import re
 import traceback
 from collections import OrderedDict
 from typing import Union
-
 import torch
+
 from tools.file_io import PathManager
-from models import FairseqDecoder, FairseqEncoder
 from torch.serialization import default_restore_location
 
 
@@ -481,8 +480,11 @@ def prune_state_dict(state_dict, args):
     return new_state_dict
 
 
-def load_pretrained_component_from_model(
-    component: Union[FairseqEncoder, FairseqDecoder], checkpoint: str
+
+# def load_pretrained_component_from_model(
+#     component: Union[FairseqEncoder, FairseqDecoder], checkpoint: str
+# ):
+def load_pretrained_component_from_model(component, checkpoint
 ):
     """
     Load a pretrained FairseqEncoder or FairseqDecoder from checkpoint into the
@@ -490,6 +492,7 @@ def load_pretrained_component_from_model(
     mismatch in the architecture of the corresponding `component` found in the
     `checkpoint` file.
     """
+    from models import FairseqDecoder, FairseqEncoder
     if not PathManager.exists(checkpoint):
         raise IOError("Model file not found: {}".format(checkpoint))
     state = load_checkpoint_to_cpu(checkpoint)

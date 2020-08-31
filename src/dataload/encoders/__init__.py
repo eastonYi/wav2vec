@@ -7,7 +7,7 @@
 import importlib
 import os
 
-from tools import registry
+import registry
 
 
 build_tokenizer, register_tokenizer, TOKENIZER_REGISTRY = registry.setup_registry(

@@ -6,7 +6,7 @@
 import importlib
 import os
 
-from tools import registry
+import registry
 from optim.lr_scheduler.fairseq_lr_scheduler import FairseqLRScheduler
 
 

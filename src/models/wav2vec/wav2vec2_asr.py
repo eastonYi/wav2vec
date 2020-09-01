@@ -326,12 +326,12 @@ class Wav2VecEncoder(FairseqEncoder):
             "encoder_layerdrop": args.layerdrop,
             "feature_grad_mult": args.feature_grad_mult,
         }
-
         if getattr(args, "w2v_args", None) is None:
             state = checkpoint_utils.load_checkpoint_to_cpu(
                 args.w2v_path, arg_overrides
             )
             w2v_args = state["args"]
+            assert getattr(w2v_args, "w2v_path", None) is None
         else:
             state = None
             w2v_args = args.w2v_args

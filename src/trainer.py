@@ -233,7 +233,6 @@ class Trainer(object):
     ):
         """Load all training state from a checkpoint file."""
         extra_state, self._optim_history, last_optim_state = None, [], None
-
         bexists = PathManager.isfile(filename)
         if bexists:
             state = checkpoint_utils.load_checkpoint_to_cpu(filename)

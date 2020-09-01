@@ -155,7 +155,7 @@ class FConvEncoder(FairseqEncoder):
             dropout, module_name=self.__class__.__name__
         )
         self.num_attention_layers = None
-
+ 
         num_embeddings = len(dictionary)
         self.padding_idx = dictionary.pad()
         self.embed_tokens = Embedding(num_embeddings, embed_dim, self.padding_idx)

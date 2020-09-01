@@ -18,7 +18,7 @@ import os.path as osp
 import warnings
 import tasks
 from tools.utils import apply_to_sample
-from speech_recognition.data.replabels import unpack_replabels
+from dataload.replabels import unpack_replabels
 
 try:
     from wav2letter.common import create_word_dict, load_words

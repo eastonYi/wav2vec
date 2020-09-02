@@ -35,6 +35,18 @@ logger = logging.getLogger(__name__)
 MANIFOLD_PATH_SEP = "|"
 
 
+def iter_find(rootdir, ext):
+    res = []
+    for file in os.listdir(rootdir):
+       path = os.path.join(rootdir, file)
+       if os.path.isdir(path):
+          res.extend(iter_find(path, ext))
+       if os.path.isfile(path) and path.endswith('.' + ext):
+          res.append(path)
+
+    return res
+
+
 def split_paths(paths: str) -> List[str]:
     return paths.split(os.pathsep) if "://" not in paths else paths.split(MANIFOLD_PATH_SEP)
 

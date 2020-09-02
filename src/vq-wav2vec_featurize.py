@@ -21,7 +21,6 @@ except:
 
 from models.wav2vec.wav2vec import Wav2VecModel
 
-import tqdm
 import soundfile as sf
 from torch.utils.data import DataLoader
 import os.path as osp

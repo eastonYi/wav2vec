@@ -12,7 +12,6 @@ import argparse
 import glob
 import os
 from shutil import copy
-
 import h5py
 import soundfile as sf
 import numpy as np
@@ -21,6 +20,7 @@ from torch import nn
 import tqdm
 
 from models.wav2vec.wav2vec import Wav2VecModel
+from tools.utils import iter_find
 
 
 def read_audio(fname):
@@ -182,7 +182,10 @@ class EmbeddingDatasetWriter(object):
 
     @property
     def input_fnames(self):
-        return sorted(glob.glob(self.get_input_path("*.{}".format(self.extension))))
+        rootdir = self.get_input_path()
+        return sorted(iter_find(rootdir, self.extension))
+
+        # return sorted(glob.glob(self.get_input_path("*.{}".format(self.extension))))
 
     def __len__(self):
         return len(self.input_fnames)
@@ -217,6 +220,7 @@ if __name__ == "__main__":
             input_root=args.input,
             output_root=args.output,
             split=split,
+            verbose=True,
             model_fname=args.model,
             gpu=args.gpu,
             extension=args.ext,

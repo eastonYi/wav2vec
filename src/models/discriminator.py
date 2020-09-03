@@ -1,33 +1,52 @@
-# Copyright (c) Facebook, Inc. and its affiliates.
-#
-# This source code is licensed under the MIT license found in the
-# LICENSE file in the root directory of this source tree.
+import logging
+import math
+import sys
 
 import torch
 import torch.nn as nn
-from typing import Dict, List, NamedTuple, Optional
-from torch import Tensor
+import torch.nn.functional as F
 
-EncoderOut = NamedTuple(
-    "EncoderOut",[
-        ("encoder_out", Tensor),  # T x B x C
-        ("encoder_padding_mask", Optional[Tensor]),  # B x T
-        ("encoder_embedding", Optional[Tensor]),  # B x T x C
-        ("encoder_states", Optional[List[Tensor]]),  # List[T x B x C]
-        ("src_tokens", Optional[Tensor]),  # B x T
-        ("src_lengths", Optional[Tensor]),  # B x 1
-    ],
+from models import BaseFairseqModel, register_model
+from modules import (
+    Fp32GroupNorm,
+    Fp32LayerNorm,
+    TransposeLast,
 )
 
+logger = logging.getLogger(__name__)
 
-class CLM(nn.Module):
-    """Base class for encoders."""
 
-    def __init__(self, dictionary):
+@register_model("discriminator")
+class CLM(BaseFairseqModel):
+    def __init__(self, args):
         super().__init__()
-        self.dictionary = dictionary
 
-    def forward(self, src_tokens, src_lengths=None, **kwargs):
+        if args.activation == "relu":
+            activation = nn.ReLU()
+        elif args.activation == "gelu":
+            activation = nn.GELU()
+        else:
+            raise Exception("unknown activation " + args.activation)
+
+        feature_enc_layers = eval(args.conv_feature_layers)
+        self.feature_extractor = ConvFeatureExtractionModel(
+            conv_layers=feature_enc_layers,
+            dropout=0.0,
+            log_compression=args.log_compression,
+            skip_connections=args.skip_connections_feat,
+            residual_scale=args.residual_scale,
+            non_affine_group_norm=args.non_affine_group_norm,
+            activation=activation,
+        )
+
+    @classmethod
+    def build_model(cls, args):
+
+        model = cls(args)
+        logger.info(model)
+        return model
+
+    def forward(self, src, src_lengths=None, **kwargs):
         """
         Args:
             src_tokens (LongTensor): tokens in the source language of shape
@@ -35,56 +54,70 @@ class CLM(nn.Module):
             src_lengths (LongTensor): lengths of each source sentence of shape
                 `(batch)`
         """
-        raise NotImplementedError
+        logits = self.feature_extractor(src)
 
-    def forward_torchscript(self, net_input: Dict[str, Tensor]):
-        """A TorchScript-compatible version of forward.
+        return logits
 
-        Encoders which use additional arguments may want to override
-        this method for TorchScript compatibility.
-        """
-        if torch.jit.is_scripting():
-            return self.forward(
-                src_tokens=net_input["src_tokens"],
-                src_lengths=net_input["src_lengths"],
+
+class ConvFeatureExtractionModel(nn.Module):
+    def __init__(
+        self,
+        conv_layers,
+        dropout,
+        skip_connections,
+        residual_scale,
+        non_affine_group_norm,
+        activation,
+    ):
+        super().__init__()
+
+        def block(n_in, n_out, k, stride):
+            return nn.Sequential(
+                nn.Conv1d(n_in, n_out, k, stride=stride, bias=False),
+                nn.Dropout(p=dropout),
+                norm_block(
+                    is_layer_norm=False, dim=n_out, affine=not non_affine_group_norm
+                ),
+                activation,
             )
-        else:
-            return self.forward_non_torchscript(net_input)
 
-    @torch.jit.unused
-    def forward_non_torchscript(self, net_input: Dict[str, Tensor]):
-        encoder_input = {
-            k: v
-            for k, v in net_input.items()
-            if k != "prev_output_tokens"
-        }
-        return self.forward(**encoder_input)
+        in_d = 1
+        self.conv_layers = nn.ModuleList()
+        for dim, k, stride in conv_layers:
+            self.conv_layers.append(block(in_d, dim, k, stride))
+            in_d = dim
 
-    def reorder_encoder_out(self, encoder_out, new_order):
-        """
-        Reorder encoder output according to `new_order`.
+        self.final_fc = nn.dense(dim, 1)
 
-        Args:
-            encoder_out: output from the ``forward()`` method
-            new_order (LongTensor): desired order
+        self.skip_connections = skip_connections
+        self.residual_scale = math.sqrt(residual_scale)
 
-        Returns:
-            `encoder_out` rearranged according to `new_order`
-        """
-        raise NotImplementedError
+    def forward(self, x):
+        # BxT -> BxCxT
+        x = x.unsqueeze(1)
 
-    def max_positions(self):
-        """Maximum input length supported by the encoder."""
-        return 1e6  # an arbitrary large number
+        for conv in self.conv_layers:
+            residual = x
+            x = conv(x)
+            if self.skip_connections and x.size(1) == residual.size(1):
+                tsz = x.size(2)
+                r_tsz = residual.size(2)
+                residual = residual[..., :: r_tsz // tsz][..., :tsz]
+                x = (x + residual) * self.residual_scale
 
-    def upgrade_state_dict(self, state_dict):
-        """Upgrade a (possibly old) state dict for new versions of fairseq."""
-        return state_dict
+        logits = self.final_fc(x)[:, 0]
 
-    def set_num_updates(self, num_updates):
-        """State from trainer to pass along to model at every update."""
+        return logits
 
-        def _apply(m):
-            if hasattr(m, 'set_num_updates') and m != self:
-                m.set_num_updates(num_updates)
-        self.apply(_apply)
+
+def norm_block(is_layer_norm, dim, affine=True):
+    if is_layer_norm:
+        mod = nn.Sequential(
+            TransposeLast(),
+            Fp32LayerNorm(dim, elementwise_affine=affine),
+            TransposeLast(),
+        )
+    else:
+        mod = Fp32GroupNorm(1, dim, affine=affine)
+
+    return mod

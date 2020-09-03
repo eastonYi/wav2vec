@@ -26,7 +26,7 @@ logging.basicConfig(
     level=logging.INFO,
     stream=sys.stdout,
 )
-logger = logging.getLogger('fairseq_cli.preprocess')
+logger = logging.getLogger('preprocess')
 
 
 def main(args):

@@ -21,7 +21,7 @@ logging.basicConfig(
     level=logging.INFO,
     stream=sys.stdout,
 )
-logger = logging.getLogger('fairseq_cli.validate')
+logger = logging.getLogger('validate')
 
 
 def main(args, override_args=None):

@@ -53,9 +53,6 @@ class Trainer(object):
         # copy model and criterion to current device/dtype
         self._criterion = criterion
         self._model = model
-        if args.fp16:
-            self._criterion = self._criterion.half()
-            self._model = self._model.half()
         self._criterion = self._criterion.to(device=self.device)
         self._model = self._model.to(device=self.device)
 
@@ -181,22 +178,9 @@ class Trainer(object):
             )
         )
 
-        if self.args.fp16:
-            if self.cuda and torch.cuda.get_device_capability(0)[0] < 7:
-                logger.info(
-                    "NOTE: your device does NOT support faster training with --fp16, "
-                    "please switch to FP32 which is likely to be faster"
-                )
-            if self.args.memory_efficient_fp16 or self.args.memory_efficient_bf16:
-                self._optimizer = optim.MemoryEfficientFP16Optimizer.build_optimizer(
-                    self.args, params
-                )
-            else:
-                self._optimizer = optim.FP16Optimizer.build_optimizer(self.args, params)
-        else:
-            if self.cuda and torch.cuda.get_device_capability(0)[0] >= 7:
-                logger.info("NOTE: your device may support faster training with --fp16")
-            self._optimizer = optim.build_optimizer(self.args, params)
+        if self.cuda and torch.cuda.get_device_capability(0)[0] >= 7:
+            logger.info("NOTE: your device may support faster training with --fp16")
+        self._optimizer = optim.build_optimizer(self.args, params)
 
         if self.args.use_bmuf:
             self._optimizer = optim.FairseqBMUF(self.args, self._optimizer)

@@ -31,7 +31,7 @@ logging.basicConfig(
     level=logging.INFO,
     stream=sys.stdout,
 )
-logger = logging.getLogger('fairseq_cli.interactive')
+logger = logging.getLogger('interactive')
 
 
 Batch = namedtuple('Batch', 'ids src_tokens src_lengths constraints')

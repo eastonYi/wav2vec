@@ -27,7 +27,7 @@ logging.basicConfig(
     datefmt='%Y-%m-%d %H:%M:%S',
     level=logging.INFO,
 )
-logger = logging.getLogger('fairseq_cli.eval_lm')
+logger = logging.getLogger('eval_lm')
 
 
 class WordStat(object):

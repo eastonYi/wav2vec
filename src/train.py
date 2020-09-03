@@ -32,7 +32,7 @@ logging.basicConfig(
     level=logging.INFO,
     stream=sys.stdout,
 )
-logger = logging.getLogger("fairseq_cli.train")
+logger = logging.getLogger("train")
 
 
 def main(args):
@@ -171,8 +171,6 @@ def train(args, trainer, task, epoch_itr):
         else args.update_freq[-1]
     )
     itr = iterators.GroupedIterator(itr, update_freq)
-    if getattr(args, "tpu", False):
-        itr = utils.tpu_data_loader(itr)
     progress = progress_bar.progress_bar(
         itr,
         log_format=args.log_format,
@@ -280,8 +278,6 @@ def validate(args, trainer, task, epoch_itr, subsets):
 
         # Initialize data iterator
         itr = trainer.get_valid_iterator(subset).next_epoch_itr(shuffle=False)
-        if getattr(args, "tpu", False):
-            itr = utils.tpu_data_loader(itr)
         progress = progress_bar.progress_bar(
             itr,
             log_format=args.log_format,

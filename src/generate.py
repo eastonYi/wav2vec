@@ -52,7 +52,7 @@ def _main(args, output_file):
         level=logging.INFO,
         stream=output_file,
     )
-    logger = logging.getLogger('fairseq_cli.generate')
+    logger = logging.getLogger('generate')
 
     utils.import_user_module(args)
 

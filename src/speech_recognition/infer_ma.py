@@ -50,7 +50,7 @@ output units",
         "--rnnt_len_penalty", default=-0.5, help="rnnt length penalty on word level"
     )
     parser.add_argument(
-        "--w2l-decoder", choices=["viterbi", "kenlm", "fairseqlm"], help="use a w2l decoder"
+        "--w2l-decoder", choices=["viterbi", "kenlm", "fairseqlm", "ctc_decoder"], help="use a w2l decoder"
     )
     parser.add_argument("--lexicon", help="lexicon for w2l decoder")
     parser.add_argument("--unit-lm", action='store_true', help="if using a unit lm")
@@ -203,6 +203,7 @@ def load_models_and_criterions(filenames, data_path, arg_overrides=None, task=No
             if not os.path.exists(filename):
                 raise IOError("Model file not found: {}".format(filename))
             state = checkpoint_utils.load_checkpoint_to_cpu(filename, arg_overrides)
+            state["args"].w2v_path = '/home/easton/projects/wav2vec/egs/libri/exp/wav2vec2_small.pt'
         else:
             state = model_state
 
@@ -309,17 +310,21 @@ def main(args, task=None, model_state=None):
     def build_generator(args):
         w2l_decoder = getattr(args, "w2l_decoder", None)
         if w2l_decoder == "viterbi":
-            from examples.speech_recognition.w2l_decoder import W2lViterbiDecoder
+            from speech_recognition.w2l_decoder import W2lViterbiDecoder
 
             return W2lViterbiDecoder(args, task.target_dictionary)
         elif w2l_decoder == "kenlm":
-            from examples.speech_recognition.w2l_decoder import W2lKenLMDecoder
+            from speech_recognition.w2l_decoder import W2lKenLMDecoder
 
             return W2lKenLMDecoder(args, task.target_dictionary)
         elif w2l_decoder == "fairseqlm":
-            from examples.speech_recognition.w2l_decoder import W2lFairseqLMDecoder
+            from speech_recognition.w2l_decoder import W2lFairseqLMDecoder
 
             return W2lFairseqLMDecoder(args, task.target_dictionary)
+        elif w2l_decoder == "ctc_decoder":
+            from speech_recognition.ctc_decoder import CTCDecoder
+
+            return CTCDecoder(args, task.target_dictionary)
         else:
             return super().build_generator(args)
 

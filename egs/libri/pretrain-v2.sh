@@ -1,10 +1,11 @@
-SAVE_DIR=exp/base_pretrain/
-DATA_DIR=data/pretrain_960h
+gpu=$1
+SAVE_DIR=exp/pretrain_test/
+DATA_DIR=data/pretrain_100h
 
 . path.sh
 
 # continue
-CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python $SRC/train.py $DATA_DIR \
+CUDA_VISIBLE_DEVICES=$gpu python $SRC_ROOT/train.py $DATA_DIR \
 --save-dir $SAVE_DIR --num-workers 4 --task audio_pretraining --criterion wav2vec --arch wav2vec2 \
 --log-keys '["prob_perplexity","code_perplexity","temp"]' --quantize-targets --extractor-mode default \
 --conv-feature-layers '[(512, 10, 5)] + [(512, 3, 2)] * 4 + [(512,2,2)] * 2' --final-dim 256 --latent-vars 320 \

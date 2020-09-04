@@ -9,7 +9,6 @@ import os
 import re
 import traceback
 from collections import OrderedDict
-from typing import Union
 import torch
 
 from tools.file_io import PathManager
@@ -485,8 +484,7 @@ def prune_state_dict(state_dict, args):
 # def load_pretrained_component_from_model(
 #     component: Union[FairseqEncoder, FairseqDecoder], checkpoint: str
 # ):
-def load_pretrained_component_from_model(component, checkpoint
-):
+def load_pretrained_component_from_model(component, checkpoint):
     """
     Load a pretrained FairseqEncoder or FairseqDecoder from checkpoint into the
     provided `component` object. If state_dict fails to load, there may be a

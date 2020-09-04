@@ -270,6 +270,8 @@ def post_process(sentence: str, symbol: str):
         sentence = sentence.replace(" ", "").replace("\u2581", " ").strip()
     elif symbol == 'wordpiece':
         sentence = sentence.replace(" ", "").replace("_", " ").strip()
+    elif symbol == 'char':
+        sentence = sentence.strip()
     elif symbol == 'letter':
         sentence = sentence.replace(" ", "").replace("|", " ").strip()
     elif symbol == "_EOW":

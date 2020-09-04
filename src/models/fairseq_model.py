@@ -12,7 +12,6 @@ from typing import Dict, List, Optional, Tuple
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from tools import utils
 from tools.checkpoint_utils import prune_state_dict
 from dataload import Dictionary
 from models import FairseqDecoder, FairseqEncoder
@@ -201,21 +200,6 @@ class BaseFairseqModel(nn.Module):
 
         self.apply(apply_prepare_for_onnx_export_)
 
-    def prepare_for_tpu_(self, **kwargs):
-        """Optionally modify model for use on TPUs."""
-        seen = set()
-
-        def apply_prepare_for_tpu_(module):
-            if (
-                module != self
-                and hasattr(module, "prepare_for_tpu_")
-                and module not in seen
-            ):
-                seen.add(module)
-                module.prepare_for_tpu_(**kwargs)
-
-        self.apply(apply_prepare_for_tpu_)
-
     @classmethod
     def from_pretrained(
         cls,
@@ -336,16 +320,6 @@ class FairseqEncoderDecoderModel(BaseFairseqModel):
     def max_decoder_positions(self):
         """Maximum length supported by the decoder."""
         return self.decoder.max_positions()
-
-
-class FairseqModel(FairseqEncoderDecoderModel):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        utils.deprecation_warning(
-            "FairseqModel is deprecated, please use FairseqEncoderDecoderModel "
-            "or BaseFairseqModel instead",
-            stacklevel=4,
-        )
 
 
 class FairseqMultiModel(BaseFairseqModel):

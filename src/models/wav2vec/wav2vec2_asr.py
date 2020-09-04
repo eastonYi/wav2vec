@@ -182,8 +182,48 @@ class Wav2VecCtc(BaseFairseqModel):
         x = self.w2v_encoder(**kwargs)
         return x
 
-    # def max_positions(self):
-    #     return None
+
+@register_model("wav2vec_gan")
+class Wav2VecCTC_GAN(Wav2VecCtc):
+    @staticmethod
+    def add_args(parser):
+        """Add model-specific arguments to the parser."""
+        add_common_args(parser)
+
+        parser.add_argument('--loss-weights', type=str, default=None,
+                            help='weights for additional loss terms (not first one)')
+
+    def __init__(self, w2v_encoder, discriminator, args):
+        super().__init__()
+        self.w2v_encoder = w2v_encoder
+        self.D = discriminator
+        self.args = args
+        self.embed_dim = args.embed_dim
+
+    @classmethod
+    def build_model(cls, args, task):
+        """Build a new model instance."""
+        base_architecture(args)
+        w2v_encoder = Wav2VecEncoder(args, task.target_dictionary)
+        discriminator = CLM(args)
+
+        return cls(w2v_encoder, discriminator, args)
+
+    def forward(self, x, len_x, x_un, len_x_un, text, len_text):
+        # supervise
+        logits = self.w2v_encoder(x, len_x)
+
+        # neg score
+        logits_G = self.w2v_encoder(x_un, len_x_un)
+        score_neg = self.D(F.softmax(logits_G))
+
+        # pos score
+        feature_text = F.one_hot(text, self.embed_dim)
+        score_pos = self.D(feature_text, len_text, reuse=True)
+
+        result = {'logits': logits, 'score_neg': score_neg, 'score_pos': score_pos}
+
+        return result
 
 
 @register_model("wav2vec_seq2seq")
@@ -258,8 +298,6 @@ class TransformerModel(FairseqEncoderDecoderModel):
             help="dropout probability after activation in FFN inside the decoder",
         )
 
-        # fmt: on
-
     @classmethod
     def build_model(cls, args, task):
         """Build a new model instance."""
@@ -307,7 +345,6 @@ class TransformerModel(FairseqEncoderDecoderModel):
 class Wav2VecEncoder(FairseqEncoder):
     def __init__(self, args, tgt_dict=None):
         self.apply_mask = args.apply_mask
-
         arg_overrides = {
             "dropout": args.dropout,
             "activation_dropout": args.activation_dropout,
@@ -414,6 +451,36 @@ class Wav2VecEncoder(FairseqEncoder):
 
     def upgrade_state_dict_named(self, state_dict, name):
         return state_dict
+
+
+from .wav2vec2 import ConvFeatureExtractionModel
+class CLM(FairseqEncoder):
+    def __init__(self, args, tgt_dict):
+        self.apply_mask = args.apply_mask
+
+        feature_enc_layers = eval(args.conv_feature_layers)
+        self.feature_extractor = ConvFeatureExtractionModel(
+            conv_layers=feature_enc_layers,
+            dropout=0.0,
+            mode=args.extractor_mode,
+            conv_bias=args.conv_bias,
+        )
+        self.proj = Linear(len(tgt_dict), 1)
+
+        super().__init__(None)
+
+        self.num_updates = 0
+
+    def forward(self, source, padding_mask):
+
+        source = source * padding_mask
+        x = self.feature_extractor(source)
+
+        logits = self.proj(x)[:, 0]
+
+        return {
+            "score": logits  # B
+        }
 
 
 class TransformerDecoder(FairseqIncrementalDecoder):

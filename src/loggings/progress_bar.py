@@ -109,10 +109,10 @@ class BaseProgressBar(object):
         self.n = getattr(iterable, 'n', 0)
         self.epoch = epoch
         self.prefix = ''
-        if epoch is not None:
-            self.prefix += 'epoch {:03d}'.format(epoch)
-        if prefix is not None:
-            self.prefix += ' | {}'.format(prefix)
+        # if epoch is not None:
+        #     self.prefix += 'epoch {:03d}'.format(epoch)
+        # if prefix is not None:
+        #     self.prefix += ' | {}'.format(prefix)
 
     def __len__(self):
         return len(self.iterable)

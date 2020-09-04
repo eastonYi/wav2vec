@@ -1,20 +1,20 @@
 . path.sh
 
-gpu=0
-lm_weight=1.46
-word_score=0.52
+gpu=$1
 label_type=char
-DATA_DIR=data/char
+DATA_DIR=data/ja/char
 data_name=test
-lexicon=data/char/lexicon.txt
-lm=data/callhome.word.bin
-# MODEL_PATH=exp/finetune_ja_hiragana/checkpoint_best.pt
-MODEL_PATH=/data5/syzhou/work/data/fairseq/exp/wav2vec2_base_finetune_callhome_ja_char/checkpoint_last.pt
-RESULT_DIR=exp/finetune_ja_char/decode_callhome_ja_selflm${lm_weight}_score${word_score}
+MODEL_PATH=exp/finetune_ja_char/checkpoint_best.pt
+RESULT_DIR=exp/finetune_ja_char/decode_callhome_ja
 
-CUDA_VISIBLE_DEVICES=$gpu python $SRC_ROOT/speech_recognition/infer_ma.py $DATA_DIR \
+TOKENIZERS_PARALLELISM=false CUDA_VISIBLE_DEVICES=$gpu python $SRC_ROOT/speech_recognition/infer_ma.py $DATA_DIR \
 --task audio_pretraining --nbest 1 --path $MODEL_PATH \
---gen-subset $data_name --results-path $RESULT_DIR --w2l-decoder kenlm \
---lm-model $lm --lm-weight ${lm_weight} \
---word-score ${word_score} --sil-weight 0 --criterion ctc --labels $label_type --max-tokens 4000000 \
---post-process letter --lexicon $lexicon --beam 100
+--gen-subset $data_name --results-path $RESULT_DIR --w2l-decoder ctc_decoder \
+--criterion ctc --labels $label_type --max-tokens 4000000 \
+--post-process char --beam 100
+
+
+# python examples/speech_recognition/infer.py $DIR_FOR_PREPROCESSED_DATA --task speech_recognition
+# --seed 1 --nbest 1 --path $MODEL_PATH/checkpoint_last.pt
+# --gen-subset $SET --results-path $RES_DIR --w2l-decoder viterbi
+# --criterion asg_loss --max-replabel 2 --user-dir examples/speech_recognition

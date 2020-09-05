@@ -13,7 +13,6 @@ import warnings
 from itertools import accumulate
 from typing import Callable, Dict, List, Optional
 
-
 import torch
 import torch.nn.functional as F
 from dataload import iterators
@@ -410,6 +409,41 @@ def import_user_module(args):
         if module_name not in sys.modules:
             sys.path.insert(0, module_parent)
             importlib.import_module(module_name)
+
+
+def ctc_shrink(logits, pad, blk):
+    """only count the first one for the repeat freams
+    """
+    B, T, V = logits.size()
+    tokens = torch.argmax(logits, -1)
+    print(tokens)
+    # intermediate vars along time
+    list_fires = []
+    token_prev = torch.ones(B) * -1
+    blk_batch = torch.ones(B) * blk
+    pad_batch = torch.ones(B) * pad
+
+    for t in range(T):
+        token = tokens[:, t]
+        print(t, token, blk_batch, pad_batch)
+        fire_place = torch.logical_and(token != blk_batch, token != token_prev)
+        fire_place = torch.logical_and(fire_place, token != pad_batch)
+        list_fires.append(fire_place)
+        token_prev = token
+
+    fires = torch.stack(list_fires, 1)
+    len_decode = fires.sum(-1)
+    max_decode_len = len_decode.max()
+    list_ls = []
+
+    for b in range(B):
+        l = logits[b, :, :].index_select(0, torch.where(fires[b])[0])
+        pad_l = torch.zeros([max_decode_len - l.size(0), V])
+        list_ls.append(torch.cat([l, pad_l], 0))
+
+    logits_shrunk = torch.stack(list_ls, 0)
+
+    return logits_shrunk, len_decode
 
 
 def softmax(x, dim: int, onnx_trace: bool = False):

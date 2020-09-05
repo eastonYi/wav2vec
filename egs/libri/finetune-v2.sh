@@ -13,7 +13,7 @@ CUDA_VISIBLE_DEVICES=$gpu python $SRC_ROOT/train.py $DATA_DIR --save-dir $SAVE_D
 --feature-grad-mult 0.0 --freeze-finetune-updates 10000 --validate-after-updates 10000  --validate-interval 50  --optimizer adam \
 --adam-betas '(0.9, 0.98)' --adam-eps 1e-08 --lr 2e-05 --lr-scheduler tri_stage --warmup-steps 8000 --hold-steps 42000 \
 --decay-steps 50000 --final-lr-scale 0.05 --final-dropout 0.0 --dropout 0.0 --activation-dropout 0.1 --criterion ctc \
---attention-dropout 0.0 --max-tokens 1280000 --seed 2337 --ddp-backend no_c10d --update-freq 3 \
+--attention-dropout 0.0 --max-tokens 1000000 --seed 2337 --ddp-backend no_c10d --update-freq 3 \
 --log-interval 10 --log-format simple --save-interval 50
 
 # CUDA_VISIBLE_DEVICES=$gpu python $SRC_ROOT/train.py $DATA_DIR --save-dir $SAVE_DIR --tensorboard-logdir $SAVE_DIR \
@@ -25,7 +25,7 @@ CUDA_VISIBLE_DEVICES=$gpu python $SRC_ROOT/train.py $DATA_DIR --save-dir $SAVE_D
 # --feature-grad-mult 0.0 --freeze-finetune-updates 10000 --validate-after-updates 10000  --validate-interval 50  --optimizer adam \
 # --adam-betas '(0.9, 0.98)' --adam-eps 1e-08 --lr 2e-05 --lr-scheduler tri_stage --warmup-steps 8000 --hold-steps 42000 \
 # --decay-steps 50000 --final-lr-scale 0.05 --final-dropout 0.0 --dropout 0.0 --activation-dropout 0.1 --criterion ctc \
-# --attention-dropout 0.0 --max-tokens 1280000 --seed 2337 --ddp-backend no_c10d --update-freq 3 \
+# --attention-dropout 0.0 --max-tokens 1000000 --seed 2337 --ddp-backend no_c10d --update-freq 3 \
 # --log-interval 10 --log-format simple --save-interval 50
 
 # TOKENIZERS_PARALLELISM=false CUDA_VISIBLE_DEVICES=$gpu python $SRC_ROOT/train.py $DATA_DIR --save-dir $SAVE_DIR \

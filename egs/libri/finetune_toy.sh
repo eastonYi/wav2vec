@@ -12,5 +12,5 @@ CUDA_VISIBLE_DEVICES=0,1 python $SRC_ROOT/train.py $DATA_DIR --save-dir $SAVE_DI
 --feature-grad-mult 0.0 --freeze-finetune-updates 1000 --validate-after-updates 10000 --optimizer adam \
 --adam-betas '(0.9, 0.98)' --adam-eps 1e-08 --lr 2e-05 --lr-scheduler tri_stage --warmup-steps 100 --hold-steps 32000 \
 --decay-steps 40000 --final-lr-scale 0.05 --final-dropout 0.0 --dropout 0.0 --activation-dropout 0.1 --criterion ctc \
---attention-dropout 0.0 --max-tokens 1280000 --fix-batches-to-gpus --seed 2337 --log-format json --log-interval 1 --ddp-backend no_c10d --update-freq 3 \
+--attention-dropout 0.0 --max-tokens 1000000 --fix-batches-to-gpus --seed 2337 --log-format json --log-interval 1 --ddp-backend no_c10d --update-freq 3 \
 --log-interval 1 --log-format simple --reset-optimizer --data-buffer-size 0

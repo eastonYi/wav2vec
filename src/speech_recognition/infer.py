@@ -13,20 +13,22 @@ import logging
 import math
 import os
 import sys
-
 import numpy as np
 import torch
+
 import tasks
-from tools import checkpoint_utils, options, progress_bar, utils
+from loggings import progress_bar
+from tools import checkpoint_utils, options, utils
 from loggings.meters import StopwatchMeter, TimeMeter
 from dataload.data_utils import post_process
-
 
 logging.basicConfig()
 logging.root.setLevel(logging.INFO)
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
+list_ignore = ['[laughter]', '[vocalized-noise]', '[noise]', '!SIL', '<unk>']
 
 def add_asr_eval_argument(parser):
     parser.add_argument("--kspmodel", default=None, help="sentence piece model")
@@ -50,9 +52,10 @@ output units",
         "--rnnt_len_penalty", default=-0.5, help="rnnt length penalty on word level"
     )
     parser.add_argument(
-        "--w2l-decoder", choices=["viterbi", "kenlm", "fairseqlm"], help="use a w2l decoder"
+        "--w2l-decoder", choices=["viterbi", "kenlm", "fairseqlm", "ctc_decoder"], help="use a w2l decoder"
     )
     parser.add_argument("--lexicon", help="lexicon for w2l decoder")
+    parser.add_argument("--iscn", action='store_true', help="output char")
     parser.add_argument("--unit-lm", action='store_true', help="if using a unit lm")
     parser.add_argument("--kenlm-model", "--lm-model", help="lm model for w2l decoder")
     parser.add_argument("--beam-threshold", type=float, default=25.0)
@@ -107,15 +110,35 @@ def get_dataset_itr(args, task, models):
 
 
 def process_predictions(
-        args, hypos, sp, tgt_dict, target_tokens, res_files, speaker, id
+        args, hypos, sp, tgt_dict, target_tokens, res_files, speaker, id, labels
 ):
     for hypo in hypos[: min(len(hypos), args.nbest)]:
-        hyp_pieces = tgt_dict.string(hypo["tokens"].int().cpu())
-
         if "words" in hypo:
-            hyp_words = " ".join(hypo["words"])
+            hypo_words = hypo["words"]
+            hypo_chrs = []
+            for hypo_word in hypo_words:
+                if hypo_word in list_ignore:
+                    continue
+                for chr in hypo_word:
+                    hypo_chrs.append(chr)
+            hyp_words = " ".join(hypo_chrs)
         else:
-            hyp_words = post_process(hyp_pieces, args.remove_bpe)
+            hyp_pieces = tgt_dict.string(hypo["tokens"].int().cpu())
+            hypo_chrs = []
+            for hypo_chr in hyp_pieces.split():
+                if hypo_chr not in list_ignore:
+                    hypo_chrs.append(hypo_chr)
+            hyp_words = post_process(' '.join(hypo_chrs), args.labels)
+
+        tgt_words = []
+        for tgt_word in labels[id].strip().split():
+            if tgt_word not in list_ignore:
+                tgt_words.append(tgt_word)
+        tgt_words = ' '.join(tgt_words)
+
+        if args.iscn:
+            hyp_words = ' '.join(list(hyp_words))
+            tgt_words = ' '.join(list(tgt_words.replace(' ', '')))
 
         if res_files is not None:
             print(
@@ -123,11 +146,6 @@ def process_predictions(
             )
             print("{} ({}-{})".format(hyp_words, speaker, id), file=res_files["hypo.words"])
 
-        tgt_pieces = tgt_dict.string(target_tokens)
-        tgt_words = post_process(tgt_pieces, args.remove_bpe)
-
-        if res_files is not None:
-            print("{} ({}-{})".format(tgt_pieces, speaker, id), file=res_files["ref.units"])
             print("{} ({}-{})".format(tgt_words, speaker, id), file=res_files["ref.words"])
             # only score top hypothesis
             if not args.quiet:
@@ -184,6 +202,7 @@ def load_models_and_criterions(filenames, data_path, arg_overrides=None, task=No
             if not os.path.exists(filename):
                 raise IOError("Model file not found: {}".format(filename))
             state = checkpoint_utils.load_checkpoint_to_cpu(filename, arg_overrides)
+            # state["args"].w2v_path = '/home/easton/projects/wav2vec/egs/libri/exp/wav2vec2_small.pt'
         else:
             state = model_state
 
@@ -220,7 +239,7 @@ class ExistingEmissionsDecoder(object):
         self.decoder = decoder
         self.emissions = emissions
 
-    def generate(self, models, sample, **unused):
+    def generate(self, models, sample, prefix_tokens=None):
         ids = sample["id"].cpu().numpy()
         try:
             emissions = np.stack(self.emissions[ids])
@@ -249,6 +268,12 @@ def main(args, task=None, model_state=None):
                 args.data, args.gen_subset, len(task.dataset(args.gen_subset))
             )
         )
+
+    label_path = os.path.join(args.data, "{}.word".format(args.gen_subset))
+    labels = []
+    with open(label_path, "r") as f:
+        for line in f:
+            labels.append(line)
 
     # Set dictionary
     tgt_dict = task.target_dictionary
@@ -284,17 +309,21 @@ def main(args, task=None, model_state=None):
     def build_generator(args):
         w2l_decoder = getattr(args, "w2l_decoder", None)
         if w2l_decoder == "viterbi":
-            from examples.speech_recognition.w2l_decoder import W2lViterbiDecoder
+            from speech_recognition.w2l_decoder import W2lViterbiDecoder
 
             return W2lViterbiDecoder(args, task.target_dictionary)
         elif w2l_decoder == "kenlm":
-            from examples.speech_recognition.w2l_decoder import W2lKenLMDecoder
+            from speech_recognition.w2l_decoder import W2lKenLMDecoder
 
             return W2lKenLMDecoder(args, task.target_dictionary)
         elif w2l_decoder == "fairseqlm":
-            from examples.speech_recognition.w2l_decoder import W2lFairseqLMDecoder
+            from speech_recognition.w2l_decoder import W2lFairseqLMDecoder
 
             return W2lFairseqLMDecoder(args, task.target_dictionary)
+        elif w2l_decoder == "ctc_decoder":
+            from speech_recognition.ctc_decoder import CTCDecoder
+
+            return CTCDecoder(args, task.target_dictionary)
         else:
             return super().build_generator(args)
 
@@ -356,10 +385,18 @@ def main(args, task=None, model_state=None):
                     encoder_out = models[0](**sample["net_input"])
                     feat = encoder_out["encoder_out"].transpose(0, 1).cpu().numpy()
                     for i, id in enumerate(sample["id"]):
-                        padding = encoder_out["encoder_padding_mask"][i].cpu().numpy() if encoder_out["encoder_padding_mask"] is not None else None
+                        padding = encoder_out["encoder_padding_mask"][i].cpu().numpy() \
+                            if encoder_out["encoder_padding_mask"] is not None else None
                         features[id.item()] = (feat[i], padding)
                     continue
             hypos = task.inference_step(generator, models, sample, prefix_tokens)
+            tokens_len = 0
+            for h in hypos:
+                try:
+                    h_len = len(h[0]["tokens"])
+                    tokens_len += h_len
+                except Exception as ex:
+                    print(ex)
             num_generated_tokens = sum(len(h[0]["tokens"]) for h in hypos)
             gen_timer.stop(num_generated_tokens)
 
@@ -373,7 +410,7 @@ def main(args, task=None, model_state=None):
                 )
                 # Process top predictions
                 errs, length = process_predictions(
-                    args, hypos[i], None, tgt_dict, target_tokens, res_files, speaker, id
+                    args, hypos[i], None, tgt_dict, target_tokens, res_files, speaker, id, labels
                 )
                 errs_t += errs
                 lengths_t += length
@@ -408,7 +445,7 @@ def main(args, task=None, model_state=None):
                 gen_timer.sum,
                 num_sentences / gen_timer.sum,
                 1.0 / gen_timer.avg,
-                )
+            )
         )
         logger.info("| Generate {} with beam={}".format(args.gen_subset, args.beam))
     return task, wer
@@ -418,6 +455,7 @@ def make_parser():
     parser = options.get_generation_parser()
     parser = add_asr_eval_argument(parser)
     return parser
+
 
 def cli_main():
     parser = make_parser()

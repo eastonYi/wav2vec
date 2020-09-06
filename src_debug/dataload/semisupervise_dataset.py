@@ -4,15 +4,17 @@
 # LICENSE file in the root directory of this source tree.
 
 import torch
+import random
 
 from . import AddTargetDataset
 from . import data_utils
 
 
 class SemiSuperviseDataset(AddTargetDataset):
-    def __init__(self, dataset, labels, pad, eos, batch_targets, process_label=None, add_to_input=False):
+    def __init__(self, dataset, labels, text, pad, eos, batch_targets, process_label=None, add_to_input=False):
         super().__init__(dataset)
         self.labels = labels
+        self.text = text
         self.batch_targets = batch_targets
         self.pad = pad
         self.eos = eos
@@ -20,17 +22,26 @@ class SemiSuperviseDataset(AddTargetDataset):
         self.add_to_input = add_to_input
 
     def get_label(self, index):
-        return self.labels[index] if self.process_label is None else self.process_label(self.labels[index])
+        label = self.labels[index] if self.process_label is None else self.process_label(self.labels[index])
+        B = len(label)
+        rand_idx = random.randint(len(self.text) - B)
+        text = self.text[rand_idx: rand_idx + B]
+        if self.process_label:
+            text = self.process_label(text)
+        text = data_utils.collate_tokens(text, pad_idx=self.pad, left_pad=False)
+
+        return label, text
 
     def __getitem__(self, index):
         item = self.dataset[index]
-        item["label"] = self.get_label(index)
+        item["label"], item["text"] = self.get_label(index)
+
         return item
 
     def size(self, index):
         sz = self.dataset.size(index)
-        own_sz = len(self.get_label(index))
-        return (sz, own_sz)
+        own_sz = len(self.get_label(index)[0])
+        return (sz, own_sz, )
 
     def collater(self, samples):
         collated = self.dataset.collater(samples)

@@ -111,7 +111,6 @@ def process_predictions(
 ):
     for hypo in hypos[: min(len(hypos), args.nbest)]:
         hyp_pieces = tgt_dict.string(hypo["tokens"].int().cpu())
-
         if "words" in hypo:
             hypo_words = hypo["words"]
             hypo_chrs = []

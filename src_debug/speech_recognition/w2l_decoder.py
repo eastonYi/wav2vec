@@ -31,8 +31,7 @@ try:
         LMState,
         SmearingMode,
         Trie,
-        LexiconDecoder,
-        LexiconFreeDecoder,
+        LexiconDecoder
     )
 except:
     warnings.warn(

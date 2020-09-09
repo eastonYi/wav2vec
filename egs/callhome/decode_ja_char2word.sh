@@ -1,4 +1,4 @@
-. path.sh
+. ./path.sh
 
 gpu=0
 lm_weight=1.46

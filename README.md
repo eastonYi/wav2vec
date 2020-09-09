@@ -1,5 +1,15 @@
 # wav2vec 2.0
 
+| ar | en | ma | ja | ge | sp |
+| :---: | :-: | :----: |:----: |:----: |:----: | :----: |
+| Mix-Model | 56.47 | 43.93 | 50.13 | 51.75 | 53.38 |
+| Transformer + hkust | 48.35 | 33.77 | 37.62 | 36.99  |  44.98 | 51.54  |
+| lter/char | 45.53 | 24.05 | 43.05 | 38.4 | 41.83 | 50.41 |
+|subword+char | 55.04 | 27.58 | 37.39 | 41.4 | 46.70 | 53.4 |
+|+lm | 44.67 | 23.92 | 33.57 | 39.02 | 40.66 | 46.20 |
+
+
+
 wav2vec 2.0 learns speech representations on unlabeled data as described in [wav2vec 2.0: A Framework for Self-Supervised Learning of Speech Representations (Baevski et al., 2020)](https://arxiv.org/abs/2006.11477).
 
 ## Pre-trained models

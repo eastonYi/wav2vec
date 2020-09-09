@@ -113,37 +113,31 @@ def process_predictions(
         args, hypos, sp, tgt_dict, target_tokens, res_files, speaker, id, labels
 ):
     for hypo in hypos[: min(len(hypos), args.nbest)]:
+        hyp_words = []
         if "words" in hypo:
-            hypo_words = hypo["words"]
-            hypo_chrs = []
-            for hypo_word in hypo_words:
-                if hypo_word in list_ignore:
+            for hyp_word in hypo["words"]:
+                if hyp_word in list_ignore:
                     continue
-                for chr in hypo_word:
-                    hypo_chrs.append(chr)
-            hyp_words = " ".join(hypo_chrs)
+                hyp_words.append(hyp_word)
         else:
             hyp_pieces = tgt_dict.string(hypo["tokens"].int().cpu())
-            hypo_chrs = []
             for hypo_chr in hyp_pieces.split():
                 if hypo_chr not in list_ignore:
-                    hypo_chrs.append(hypo_chr)
-            hyp_words = post_process(' '.join(hypo_chrs), args.labels)
+                    hyp_words.append(hypo_chr)
 
         tgt_words = []
         for tgt_word in labels[id].strip().split():
             if tgt_word not in list_ignore:
                 tgt_words.append(tgt_word)
+
         tgt_words = ' '.join(tgt_words)
+        hyp_words = post_process(' '.join(hyp_words), args.labels)
 
         if args.iscn:
-            hyp_words = ' '.join(list(hyp_words))
+            hyp_words = ' '.join(list(hyp_words.replace(' ', '')))
             tgt_words = ' '.join(list(tgt_words.replace(' ', '')))
 
         if res_files is not None:
-            print(
-                "{} ({}-{})".format(hyp_pieces, speaker, id), file=res_files["hypo.units"]
-            )
             print("{} ({}-{})".format(hyp_words, speaker, id), file=res_files["hypo.words"])
 
             print("{} ({}-{})".format(tgt_words, speaker, id), file=res_files["ref.words"])
@@ -175,9 +169,7 @@ def prepare_result_files(args):
 
     return {
         "hypo.words": get_res_file("hypo.word"),
-        "hypo.units": get_res_file("hypo.units"),
-        "ref.words": get_res_file("ref.word"),
-        "ref.units": get_res_file("ref.units"),
+        "ref.words": get_res_file("ref.word")
     }
 
 

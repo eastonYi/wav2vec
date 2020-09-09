@@ -180,7 +180,6 @@ class SequenceGenerator(nn.Module):
             ],
         )
         net_input = sample["net_input"]
-
         if 'src_tokens' in net_input:
             src_tokens = net_input['src_tokens']
             # length of the source text being the character length except EndOfSentence and pad

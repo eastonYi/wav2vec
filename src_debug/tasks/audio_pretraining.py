@@ -9,7 +9,7 @@ import os
 import sys
 import torch
 
-from dataload import FileAudioDataset, Dictionary, AddTargetDataset
+from dataload import FileAudioDataset, Dictionary, AddTargetDataset, SemiSuperviseDataset
 from . import FairseqTask, register_task
 
 
@@ -147,6 +147,51 @@ class AudioPretrainingTask(FairseqTask):
 
 @register_task("audio_gan_pretraining")
 class AudioGANTrainingTask(AudioPretrainingTask):
+
+    def load_dataset(self, split, **kwargs):
+        manifest = os.path.join(self.args.data, "{}.tsv".format(split))
+        self.datasets[split] = FileAudioDataset(
+            manifest,
+            sample_rate=self.args.sample_rate,
+            max_sample_size=self.args.max_sample_size,
+            min_sample_size=self.args.max_sample_size,
+            min_length=self.args.min_sample_size,
+            pad=self.args.labels is not None or self.args.enable_padding,
+            normalize=self.args.normalize,
+        )
+
+        # vocab
+        dict_path = os.path.join(self.args.data, f"dict.{self.args.labels}.txt")
+        self._target_dictionary = Dictionary.load(dict_path)
+
+        # label
+        label_path = os.path.join(self.args.data, f"{split}.{self.args.labels}")
+        labels = []
+        with open(label_path, "r") as f:
+            for line in f:
+                labels.append(line)
+
+        # text
+        text_path = os.path.join(self.args.data, f"text.{self.args.labels}")
+        text = []
+        with open(text_path, "r") as f:
+            for line in f:
+                text.append(line)
+
+        process_label = LabelEncoder(self.target_dictionary)
+
+        self.datasets[split] = SemiSuperviseDataset(
+            self.datasets,
+            text,
+            self.minidatasets[split],
+            labels,
+            pad=self.target_dictionary.pad(),
+            eos=self.target_dictionary.eos(),
+            batch_targets=True,
+            process_label=process_label,
+            add_to_input=not self.is_ctc,
+        )
+
     def train_step(
         self, sample, model, criterion, optimizer, update_num, ignore_grad=False):
         """
@@ -179,50 +224,3 @@ class AudioGANTrainingTask(AudioPretrainingTask):
             optimizer.backward(loss)
 
         return loss, sample_size, logging_output
-
-    def load_dataset(self, split, **kwargs):
-        """Load a given dataset split.
-
-        Args:
-            split (str): name of the split (e.g., train, valid, test)
-        """
-        manifest = os.path.join(self.args.data, "{}.tsv".format(split))
-        self.datasets[split] = FileAudioDataset(
-            manifest,
-            sample_rate=self.args.sample_rate,
-            max_sample_size=self.args.max_sample_size,
-            min_sample_size=self.args.max_sample_size,
-            min_length=self.args.min_sample_size,
-            pad=self.args.labels is not None or self.args.enable_padding,
-            normalize=self.args.normalize,
-        )
-
-        # vocab
-        dict_path = os.path.join(self.args.data, f"dict.{self.args.labels}.txt")
-        self._target_dictionary = Dictionary.load(dict_path)
-
-        # label
-        label_path = os.path.join(self.args.data, f"{split}.{self.args.labels}")
-        labels = []
-        with open(label_path, "r") as f:
-            for line in f:
-                labels.append(line)
-
-        # text
-        text_path = os.path.join(self.args.data, f"text.{self.args.labels}")
-        text = []
-        with open(text_path, "r") as f:
-            for line in f:
-                text.append(line)
-
-        process_label = LabelEncoder(self.target_dictionary)
-
-        self.datasets[split] = AddTargetDataset(
-            self.datasets[split],
-            labels, text,
-            pad=self.target_dictionary.pad(),
-            eos=self.target_dictionary.eos(),
-            batch_targets=True,
-            process_label=process_label,
-            add_to_input=not self.is_ctc,
-        )

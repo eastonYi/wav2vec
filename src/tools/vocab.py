@@ -10,7 +10,7 @@ from tqdm import tqdm
 import re
 
 
-def make_vocab(fpath, fname):
+def make_vocab(fpaths, fname):
     """Constructs vocabulary.
     Args:
       fpath: A string. Input file path.
@@ -19,31 +19,17 @@ def make_vocab(fpath, fname):
     Writes vocabulary line by line to `fname`.
     """
     word2cnt = Counter()
-    with open(fpath, encoding='utf-8') as f:
-        for l in f:
-            words = l.strip().split()[1:]
-            # words = l.strip().split(',')[1].split()
-            word2cnt.update(Counter(words))
+    for fpath in fpaths.split(','):
+        with open(fpath, encoding='utf-8') as f:
+            for l in f:
+                words = l.strip().split()
+                # words = l.strip().split()[1:]
+                # words = l.strip().split(',')[1].split()
+                word2cnt.update(Counter(words))
     with open(fname, 'w', encoding='utf-8') as fout:
         for word, cnt in word2cnt.most_common():
-            if re.findall('[0-9a-zA-Z]', word):
-                continue
-            fout.write(u"{} 1\n".format(word))
+            fout.write(u"{} {}\n".format(word, cnt))
     logging.info('Vocab path: {}\t size: {}'.format(fname, len(word2cnt)))
-
-
-
-def pre_processing(fpath, fname):
-    import re
-    with open(fpath, errors='ignore') as f, open(fname, 'w') as fw:
-        for line in tqdm(f):
-            line = line.strip().split(maxsplit=1)
-            idx = line[0]
-            # list_tokens = re.findall('\[[^\[\]]+\]|[a-zA-Z0-9^\[^\]]+|[^x00-xff]', line[1])
-            list_tokens = re.findall('\[[^\[\]]+\]|[^x00-xff]|[A-Za-z]', line[1])
-            list_tokens = [token.upper() for token in list_tokens]
-
-            fw.write(idx+' '+' '.join(list_tokens)+'\n')
 
 
 if __name__ == '__main__':

@@ -1,18 +1,15 @@
-. ./path_debug.sh
+. path.sh
 
 gpu=$1
-SAVE_DIR=../exp/finetune_ma_char_ctc-gan
-W2V_PATH=../exp/pretrain_6lang/checkpoint_best.pt
-DATA_DIR=../data/ma/char
+SAVE_DIR=exp/finetune_ma_gan
+W2V_PATH=exp/pretrain_6lang/checkpoint_best.pt
+DATA_DIR=data/ma/char
 label_type=char
 
 TOKENIZERS_PARALLELISM=false CUDA_VISIBLE_DEVICES=$gpu python $SRC_ROOT/train.py $DATA_DIR \
 --save-dir $SAVE_DIR --tensorboard-logdir $SAVE_DIR --post-process $label_type \
---train-subset train,untrain,text --valid-subset valid \
---no-epoch-checkpoints --best-checkpoint-metric uer \
---num-workers 1 --max-update 80000 --sentence-avg --task audio_gan_pretraining --arch wav2vec_ctc_gan \
---extractor-mode default \
---conv-feature-layers '[(512, 10, 5)] + [(512, 3, 2)] * 4 + [(512,2,2)] * 2' \
+--train-subset train --valid-subset valid --no-epoch-checkpoints --best-checkpoint-metric uer \
+--num-workers 4 --max-update 80000 --sentence-avg --task audio_gan_pretraining --arch wav2vec_ctc \
 --w2v-path $W2V_PATH --labels $label_type --apply-mask --mask-selection static --mask-other 0 \
 --mask-length 10 --mask-prob 0.5 --layerdrop 0.1 --mask-channel-selection static \
 --mask-channel-other 0 --mask-channel-length 64 --mask-channel-prob 0.5 --zero-infinity \
@@ -21,4 +18,4 @@ TOKENIZERS_PARALLELISM=false CUDA_VISIBLE_DEVICES=$gpu python $SRC_ROOT/train.py
 --lr 2e-05 --lr-scheduler tri_stage --warmup-steps 8000 --hold-steps 42000 --decay-steps 50000 \
 --final-lr-scale 0.05 --final-dropout 0.0 --dropout 0.0 --activation-dropout 0.1 --criterion ctc \
 --attention-dropout 0.0 --max-tokens 1000000 --seed 2337 --ddp-backend no_c10d \
---update-freq 3 --log-interval 10 --log-format simple --save-interval 10
+--update-freq 3 --log-interval 10 --log-format simple --save-interval 50

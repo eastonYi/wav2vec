@@ -29,6 +29,17 @@ def get_training_parser(default_task="translation"):
     return parser
 
 
+def get_semi_training_parser(default_task="translation"):
+    parser = get_parser("Trainer", default_task)
+    add_dataset_args(parser, train=True, untrain=True)
+    add_generation_args(parser)
+    add_distributed_training_args(parser)
+    add_model_args(parser)
+    add_optimization_args(parser)
+    add_checkpoint_args(parser)
+    return parser
+
+
 def get_generation_parser(interactive=False, default_task="translation"):
     parser = get_parser("Generation", default_task)
     add_dataset_args(parser, gen=True)
@@ -318,7 +329,7 @@ def add_preprocess_args(parser):
     return parser
 
 
-def add_dataset_args(parser, train=False, gen=False):
+def add_dataset_args(parser, train=False, gen=False, untrain=False):
     group = parser.add_argument_group("Dataset and data loading")
     # fmt: off
     group.add_argument('--num-workers', default=1, type=int, metavar='N',
@@ -361,6 +372,12 @@ def add_dataset_args(parser, train=False, gen=False):
                                 ' (defaults to --max-sentences)')
         group.add_argument('--curriculum', default=0, type=int, metavar='N',
                            help='don\'t shuffle batches for first N epochs')
+    if untrain:
+        group.add_argument('--untrain-subset', default='train', metavar='SPLIT',
+                           help='data subset to use for training (e.g. train, valid, test)')
+        group.add_argument('--text-subset', default='valid', metavar='SPLIT',
+                           help='comma separated list of data subsets to use for validation'
+                                ' (e.g. train, valid, test)')
     if gen:
         group.add_argument('--gen-subset', default='test', metavar='SPLIT',
                            help='data subset to generate (train, valid, test)')

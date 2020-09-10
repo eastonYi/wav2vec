@@ -15,6 +15,7 @@ class SemiSuperviseDataset(AddTargetDataset):
         super().__init__(dataset, labels, pad, eos, batch_targets, process_label, add_to_input)
         self.text = text
         self.minidataset = minidataset
+        assert len(labels) == len(minidataset)
 
     def get_text(self, index=None):
         if not index:
@@ -31,7 +32,8 @@ class SemiSuperviseDataset(AddTargetDataset):
         item["text"] = self.get_text()
 
         rand = random.randint(0, len(self.minidataset))
-        item['minisource'] = self.minidataset[rand]
+        item['_source'] = self.minidataset[rand]['source']
+        item['_id'] = self.minidataset[rand]['id']
         item["label"] = self.get_label(rand)
 
         return item
@@ -43,12 +45,19 @@ class SemiSuperviseDataset(AddTargetDataset):
         return (sz, own_sz, )
 
     def collater(self, samples):
-        from tools import pdb; pdb.set_trace()
         collated = self.dataset.collater(samples)
+        for s in samples:
+            s['source'] = s['_source']
+            s['id'] = s['_id']
+        _collated = self.dataset.collater(samples)
+        collated["_id"] = _collated["id"]
+        collated["net_input"]["_source"] = _collated["net_input"]["source"]
+        collated["net_input"]["_padding_mask"] = _collated["net_input"]["padding_mask"]
+
         if len(collated) == 0:
             return collated
-        text = [s["text"] for s in samples]
         target = [s["label"] for s in samples]
+        text = [s["text"] for s in samples]
 
         # assert len(target) == len(text), 'the number of target and text is not equal'
 
@@ -62,6 +71,8 @@ class SemiSuperviseDataset(AddTargetDataset):
 
         collated["target"] = target
         collated["net_input"]["text"] = text
+        collated["net_input"]["len_text"] = torch.LongTensor([len(t) for t in text])
+        # from tools import pdb; pdb.set_trace()
 
         if self.add_to_input:
             eos = target.new_full((target.size(0), 1), self.eos)

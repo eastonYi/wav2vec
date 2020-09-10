@@ -7,7 +7,8 @@ import contextlib
 import copy
 import math
 import numpy as np
-
+import sys
+import logging
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -24,6 +25,15 @@ from models import (
     register_model_architecture,
 )
 from modules import LayerNorm, PositionalEmbedding, TransformerDecoderLayer
+
+
+logging.basicConfig(
+    format='%(asctime)s | %(levelname)s | %(name)s | %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S',
+    level=logging.INFO,
+    stream=sys.stdout,
+)
+logger = logging.getLogger('wav2vec_asr')
 
 
 def add_common_args(parser):
@@ -235,7 +245,6 @@ class TransformerModel(FairseqEncoderDecoderModel):
             action="store_true",
             help="if set, disables positional embeddings (outside self attention)",
         )
-
         parser.add_argument(
             "--decoder-dropout",
             type=float,
@@ -321,11 +330,10 @@ class Wav2VecEncoder(FairseqEncoder):
             "feature_grad_mult": args.feature_grad_mult,
         }
         if getattr(args, "w2v_args", None) is None:
+            print('\tload w2v model: {}'.format(args.w2v_path))
             state = checkpoint_utils.load_checkpoint_to_cpu(
-                args.w2v_path, arg_overrides
-            )
+                args.w2v_path, arg_overrides)
             w2v_args = state["args"]
-            assert getattr(w2v_args, "w2v_path", None) is None
         else:
             state = None
             w2v_args = args.w2v_args
@@ -338,6 +346,7 @@ class Wav2VecEncoder(FairseqEncoder):
 
         if state is not None and not args.no_pretrained_weights:
             model.load_state_dict(state["model"], strict=True)
+            print('\tloaded w2v model !')
 
         model.remove_pretraining_modules()
 
@@ -364,7 +373,6 @@ class Wav2VecEncoder(FairseqEncoder):
         self.num_updates = num_updates
 
     def forward(self, source, padding_mask, tbc=True, **kwargs):
-
         w2v_args = {
             "source": source,
             "padding_mask": padding_mask,

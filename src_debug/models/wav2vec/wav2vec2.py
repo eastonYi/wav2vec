@@ -397,7 +397,6 @@ class Wav2Vec2Model(BaseFairseqModel):
     @classmethod
     def build_model(cls, args, task=None):
         """Build a new model instance."""
-
         # make sure all arguments are present
         base_architecture(args)
 
@@ -517,7 +516,7 @@ class Wav2Vec2Model(BaseFairseqModel):
         return logits
 
     def forward(self, source, padding_mask=None, mask=True, features_only=False):
-
+        # source: B x T
         if self.feature_grad_mult > 0:
             features = self.feature_extractor(source)
             if self.feature_grad_mult != 1.0:
@@ -680,7 +679,6 @@ class ConvFeatureExtractionModel(nn.Module):
         conv_bias: bool = False,
     ):
         super().__init__()
-
         assert mode in {"default", "layer_norm"}
 
         def block(
@@ -742,10 +740,9 @@ class ConvFeatureExtractionModel(nn.Module):
             in_d = dim
 
     def forward(self, x):
-
         # BxT -> BxCxT
+        assert x.ndim == 2
         x = x.unsqueeze(1)
-
         for conv in self.conv_layers:
             x = conv(x)
 

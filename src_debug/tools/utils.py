@@ -412,21 +412,31 @@ def import_user_module(args):
             importlib.import_module(module_name)
 
 
+def sequence_mask(lengths, maxlen=None, dtype=torch.float):
+    lengths = lengths.int()
+    if maxlen is None:
+        maxlen = lengths.max()
+    mask = torch.ones((len(lengths), maxlen),
+                      device=lengths.device,
+                      dtype=torch.uint8).cumsum(dim=1) <= lengths.unsqueeze(0).t()
+
+    return mask.type(dtype)
+
+
 def ctc_shrink(logits, pad, blk):
     """only count the first one for the repeat freams
     """
+    device = logits.device
     B, T, V = logits.size()
     tokens = torch.argmax(logits, -1)
-    print(tokens)
     # intermediate vars along time
     list_fires = []
-    token_prev = torch.ones(B) * -1
-    blk_batch = torch.ones(B) * blk
-    pad_batch = torch.ones(B) * pad
+    token_prev = torch.ones(B).to(device) * -1
+    blk_batch = torch.ones(B).to(device) * blk
+    pad_batch = torch.ones(B).to(device) * pad
 
     for t in range(T):
         token = tokens[:, t]
-        print(t, token, blk_batch, pad_batch)
         fire_place = torch.logical_and(token != blk_batch, token != token_prev)
         fire_place = torch.logical_and(fire_place, token != pad_batch)
         list_fires.append(fire_place)
@@ -439,7 +449,7 @@ def ctc_shrink(logits, pad, blk):
 
     for b in range(B):
         l = logits[b, :, :].index_select(0, torch.where(fires[b])[0])
-        pad_l = torch.zeros([max_decode_len - l.size(0), V])
+        pad_l = torch.zeros([max_decode_len - l.size(0), V]).to(device)
         list_ls.append(torch.cat([l, pad_l], 0))
 
     logits_shrunk = torch.stack(list_ls, 0)

@@ -103,8 +103,6 @@ class FairseqTask(object):
         Returns:
             a :class:`~fairseq.data.FairseqDataset` corresponding to *split*
         """
-        from dataload import FairseqDataset
-
         if split not in self.datasets:
             raise KeyError("Dataset not loaded: " + split)
         if not isinstance(self.datasets[split], FairseqDataset):

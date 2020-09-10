@@ -149,48 +149,84 @@ class AudioPretrainingTask(FairseqTask):
 class AudioGANTrainingTask(AudioPretrainingTask):
 
     def load_dataset(self, split, **kwargs):
-        manifest = os.path.join(self.args.data, "{}.tsv".format(split))
-        self.datasets[split] = FileAudioDataset(
-            manifest,
-            sample_rate=self.args.sample_rate,
-            max_sample_size=self.args.max_sample_size,
-            min_sample_size=self.args.max_sample_size,
-            min_length=self.args.min_sample_size,
-            pad=self.args.labels is not None or self.args.enable_padding,
-            normalize=self.args.normalize,
-        )
-
         # vocab
         dict_path = os.path.join(self.args.data, f"dict.{self.args.labels}.txt")
         self._target_dictionary = Dictionary.load(dict_path)
-
-        # label
-        label_path = os.path.join(self.args.data, f"{split}.{self.args.labels}")
-        labels = []
-        with open(label_path, "r") as f:
-            for line in f:
-                labels.append(line)
-
-        # text
-        text_path = os.path.join(self.args.data, f"text.{self.args.labels}")
-        text = []
-        with open(text_path, "r") as f:
-            for line in f:
-                text.append(line)
-
         process_label = LabelEncoder(self.target_dictionary)
 
-        self.datasets[split] = SemiSuperviseDataset(
-            self.datasets,
-            text,
-            self.minidatasets[split],
-            labels,
-            pad=self.target_dictionary.pad(),
-            eos=self.target_dictionary.eos(),
-            batch_targets=True,
-            process_label=process_label,
-            add_to_input=not self.is_ctc,
-        )
+        split = split.split(',')
+        if len(split) == 1:
+            split = split[0]
+            manifest = os.path.join(self.args.data, "{}.tsv".format(split))
+            self.datasets[split] = FileAudioDataset(
+                manifest,
+                sample_rate=self.args.sample_rate,
+                max_sample_size=self.args.max_sample_size,
+                min_sample_size=self.args.max_sample_size,
+                min_length=self.args.min_sample_size,
+                pad=self.args.labels is not None or self.args.enable_padding,
+                normalize=self.args.normalize)
+            # label
+            label_path = os.path.join(self.args.data, f"{split}.{self.args.labels}")
+            labels = []
+            with open(label_path, "r") as f:
+                for line in f:
+                    labels.append(line)
+
+            self.datasets[split] = AddTargetDataset(
+                self.datasets[split],
+                labels,
+                pad=self.target_dictionary.pad(),
+                eos=self.target_dictionary.eos(),
+                batch_targets=True,
+                process_label=process_label,
+                add_to_input=not self.is_ctc)
+        else:
+            train, untrain, text = split
+            manifest = os.path.join(self.args.data, "{}.tsv".format(train))
+            untrain_path = os.path.join(self.args.data, "{}.tsv".format(untrain))
+            text_path = os.path.join(self.args.data, "{}.tsv".format(text))
+            # x
+            self.datasets[train] = FileAudioDataset(
+                manifest,
+                sample_rate=self.args.sample_rate,
+                max_sample_size=self.args.max_sample_size,
+                min_sample_size=self.args.max_sample_size,
+                min_length=self.args.min_sample_size,
+                pad=self.args.labels is not None or self.args.enable_padding,
+                normalize=self.args.normalize)
+            # y
+            label_path = os.path.join(self.args.data, f"{train}.{self.args.labels}")
+            labels = []
+            with open(label_path, "r") as f:
+                for line in f:
+                    labels.append(line)
+            # x'
+            self.undatasets = FileAudioDataset(
+                untrain_path,
+                sample_rate=self.args.sample_rate,
+                max_sample_size=self.args.max_sample_size,
+                min_sample_size=self.args.max_sample_size,
+                min_length=self.args.min_sample_size,
+                pad=self.args.labels is not None or self.args.enable_padding,
+                normalize=self.args.normalize)
+            # z
+            text_path = os.path.join(self.args.data, f"text.{self.args.labels}")
+            text = []
+            with open(text_path, "r") as f:
+                for line in f:
+                    text.append(line)
+
+            self.datasets[train] = SemiSuperviseDataset(
+                self.undatasets,
+                text,
+                self.datasets[train],
+                labels,
+                pad=self.target_dictionary.pad(),
+                eos=self.target_dictionary.eos(),
+                batch_targets=True,
+                process_label=process_label,
+                add_to_input=not self.is_ctc)
 
     def train_step(
         self, sample, model, criterion, optimizer, update_num, ignore_grad=False):

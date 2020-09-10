@@ -202,6 +202,7 @@ def load_models_and_criterions(filenames, data_path, arg_overrides=None, task=No
         if task is None:
             task = tasks.setup_task(args)
         model = task.build_model(args)
+        print('model restore state from {}'.format(filename))
         model.load_state_dict(state["model"], strict=True)
         models.append(model)
 

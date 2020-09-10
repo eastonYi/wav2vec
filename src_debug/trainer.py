@@ -294,7 +294,8 @@ class Trainer(object):
         shard_batch_itr=True,
     ):
         """Return an EpochBatchIterator over the training set for a given epoch."""
-        if load_dataset:
+        if load_dataset: # only call at begin of task once
+
             logger.info("loading train data for epoch {}".format(epoch))
             self.task.load_dataset(
                 self.args.train_subset,
@@ -303,7 +304,7 @@ class Trainer(object):
                 data_selector=data_selector,
             )
         return self.task.get_batch_iterator(
-            dataset=self.task.dataset(self.args.train_subset),
+            dataset=self.task.dataset('train' if 'train' in self.task.datasets.keys() else self.args.train_subset),
             max_tokens=self.args.max_tokens,
             max_sentences=self.args.max_sentences,
             max_positions=utils.resolve_max_positions(

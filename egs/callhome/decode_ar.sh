@@ -4,8 +4,8 @@ gpu=$1
 label_type=subword
 DATA_DIR=data/ar
 data_name=test
-MODEL_PATH=exp/finetune_6lang_subword_3/checkpoint_best.pt
-RESULT_DIR=exp/finetune_6lang_subword_3/decode_callhome_ar_beam100
+MODEL_PATH=exp/finetune_6lang_subword/checkpoint_best.pt
+RESULT_DIR=exp/finetune_6lang_subword/decode_callhome_ar_beam100
 
 TOKENIZERS_PARALLELISM=false CUDA_VISIBLE_DEVICES=$gpu python $SRC_ROOT/speech_recognition/infer.py $DATA_DIR \
 --task audio_pretraining --nbest 1 --path $MODEL_PATH \

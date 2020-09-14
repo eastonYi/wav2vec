@@ -4,7 +4,6 @@
 # LICENSE file in the root directory of this source tree.
 import math
 import numpy as np
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -128,6 +127,12 @@ class Wav2Vec2Model(BaseFairseqModel):
         parser.add_argument(
             "--quantize-input", action="store_true", help="use quantized inputs"
         )
+
+        parser.add_argument(
+             "--same-quantizer",
+             action="store_true",
+             help="use same quantizer for inputs and targets",
+         )
 
         parser.add_argument(
             "--feature-grad-mult",
@@ -340,22 +345,22 @@ class Wav2Vec2Model(BaseFairseqModel):
 
         self.logit_temp = args.logit_temp
 
-        if args.quantize_input:
-            vq_dim = args.latent_dim if args.latent_dim > 0 else args.encoder_embed_dim
-            self.input_quantizer = (
-                GumbelVectorQuantizer(
-                    dim=args.encoder_embed_dim,
-                    num_vars=args.latent_vars,
-                    temp=eval(args.latent_temp),
-                    groups=args.latent_groups,
-                    combine_groups=False,
-                    vq_dim=vq_dim,
-                    time_first=True,
-                )
-                if not args.same_quantizer
-                else self.quantizer
-            )
-            self.project_inp = nn.Linear(vq_dim, args.encoder_embed_dim)
+        # if args.quantize_input:
+        #     vq_dim = args.latent_dim if args.latent_dim > 0 else args.encoder_embed_dim
+        #     self.input_quantizer = (
+        #         GumbelVectorQuantizer(
+        #             dim=args.encoder_embed_dim,
+        #             num_vars=args.latent_vars,
+        #             temp=eval(args.latent_temp),
+        #             groups=args.latent_groups,
+        #             combine_groups=False,
+        #             vq_dim=vq_dim,
+        #             time_first=True,
+        #         )
+        #         if not args.same_quantizer
+        #         else self.quantizer
+        #     )
+        #     self.project_inp = nn.Linear(vq_dim, args.encoder_embed_dim)
 
         final_dim = args.final_dim if args.final_dim > 0 else args.encoder_embed_dim
 
@@ -373,6 +378,25 @@ class Wav2Vec2Model(BaseFairseqModel):
             self.project_q = nn.Linear(vq_dim, final_dim)
         else:
             self.project_q = nn.Linear(self.embed, final_dim)
+
+        if args.quantize_input:
+             if args.same_quantizer and self.quantizer is not None:
+                 vq_dim = final_dim
+                 self.input_quantizer = self.quantizer
+             else:
+                 vq_dim = (
+                     args.latent_dim if args.latent_dim > 0 else args.encoder_embed_dim
+                 )
+                 self.input_quantizer = GumbelVectorQuantizer(
+                     dim=self.embed,
+                     num_vars=args.latent_vars,
+                     temp=eval(args.latent_temp),
+                     groups=args.latent_groups,
+                     combine_groups=False,
+                     vq_dim=vq_dim,
+                     time_first=True,
+                 )
+             self.project_inp = nn.Linear(vq_dim, args.encoder_embed_dim)
 
         self.mask_emb = nn.Parameter(
             torch.FloatTensor(args.encoder_embed_dim).uniform_()
@@ -975,6 +999,7 @@ def base_architecture(args):
 
     args.quantize_targets = getattr(args, "quantize_targets", False)
     args.quantize_input = getattr(args, "quantize_input", False)
+    args.same_quantizer = getattr(args, "same_quantizer", False)
 
     args.feature_grad_mult = getattr(args, "feature_grad_mult", 1.0)
 

@@ -5,8 +5,8 @@ data=$1
 label_type=subword
 DATA_DIR=data/6lang_subword
 data_name=test_${data}
-MODEL_PATH=exp/finetune_6lang_subword_3/checkpoint_best.pt
-RESULT_DIR=exp/finetune_6lang_subword_3/decode_callhome_${data_name}_beam100
+MODEL_PATH=exp/finetune_6lang_subword/checkpoint_best.pt
+RESULT_DIR=exp/finetune_6lang_subword/decode_callhome_${data_name}_beam100
 
 if [[ $data =~ ^(ma|ja)$ ]];then
     echo 'char'

@@ -39,7 +39,7 @@ class CrossEntropyWithAccCriterion(FairseqCriterion):
         # N, T, D -> N * T, D
         lprobs = lprobs.view(-1, lprobs.size(-1))
         loss = F.nll_loss(
-            lprobs, target, ignore_index=self.padding_idx, reduction=reduction
+            lprobs, target.long(), ignore_index=self.padding_idx, reduction=reduction
         )
         return lprobs, loss
 
@@ -61,7 +61,8 @@ class CrossEntropyWithAccCriterion(FairseqCriterion):
             "sample_size": sample_size,
             "correct": utils.item(correct.data),
             "total": utils.item(total.data),
-            "nframes": torch.sum(sample["net_input"]["src_lengths"]).item(),
+            "nframes": torch.sum(sample["net_input"]["src_lengths"]).item() \
+                if "src_lengths" in sample["net_input"].keys() else (~sample["net_input"]['padding_mask']).sum(),
         }
 
         return sample_size, logging_output
@@ -89,10 +90,10 @@ class CrossEntropyWithAccCriterion(FairseqCriterion):
             as net_output.
             We need to make a change to support all FairseqEncoder models.
         """
-        net_output = model(**sample["net_input"])
-        target = model.get_targets(sample, net_output)
+        logits, _ = model(**sample['net_input'])
+        target = sample['target']
         lprobs, loss = self.compute_loss(
-            model, net_output, target, reduction, log_probs
+            model, logits, target, reduction, log_probs
         )
         sample_size, logging_output = self.get_logging_output(
             sample, target, lprobs, loss

@@ -22,7 +22,7 @@ from modules import (
     Fp32LayerNorm,
     PositionalEmbedding,
     TransformerDecoderLayer)
-from .wav2vec2_asr import Wav2VecCtc, Wav2VecEncoder, add_common_args, base_architecture
+from .wav2vec2_ctc import Wav2VecCtc, Wav2VecEncoder, add_common_args, base_architecture
 
 
 @register_model("wav2vec_ctc_gan")
@@ -119,6 +119,7 @@ class Wav2VecCTC_GAN(Wav2VecCtc):
         model.load_state_dict(state["model"], strict=True)
 
         return model, args
+
 
 class CLM(FairseqEncoder):
 

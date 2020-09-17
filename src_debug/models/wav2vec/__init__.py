@@ -5,5 +5,6 @@
 
 from .wav2vec import *  # noqa
 from .wav2vec2 import *  # noqa
-from .wav2vec2_asr import *  # noqa
-from .wav2vec2_asr_gan import *  # noqa
+from .wav2vec2_ctc import *  # noqa
+from .wav2vec2_seq2seq import *  # noqa
+from .wav2vec2_ctc_gan import *  # noqa

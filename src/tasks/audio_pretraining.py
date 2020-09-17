@@ -113,6 +113,7 @@ class AudioPretrainingTask(FairseqTask):
                 self.datasets[split],
                 labels,
                 pad=self.target_dictionary.pad(),
+                bos=self.target_dictionary.bos(),
                 eos=self.target_dictionary.eos(),
                 batch_targets=True,
                 process_label=process_label,

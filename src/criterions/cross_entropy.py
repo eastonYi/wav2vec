@@ -4,12 +4,14 @@
 # LICENSE file in the root directory of this source tree.
 
 import math
+import torch
 
 import torch.nn.functional as F
 
 from loggings import metrics
 from tools import utils
 from criterions import FairseqCriterion, register_criterion
+from loggings.meters import safe_round
 
 
 @register_criterion('cross_entropy')
@@ -17,7 +19,7 @@ class CrossEntropyCriterion(FairseqCriterion):
 
     def __init__(self, task, sentence_avg):
         super().__init__(task)
-        self.sentence_avg = sentence_avg
+        self.sentence_avg = False
 
     def forward(self, model, sample, reduce=True):
         """Compute the loss for the given sample.
@@ -29,7 +31,7 @@ class CrossEntropyCriterion(FairseqCriterion):
         """
         net_output = model(**sample['net_input'])
         loss, _ = self.compute_loss(model, net_output, sample, reduce=reduce)
-        sample_size = sample['target'].size(0) if self.sentence_avg else sample['ntokens']
+        sample_size = sample['ntokens']
         logging_output = {
             'loss': loss.data,
             'ntokens': sample['ntokens'],

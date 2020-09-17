@@ -2,8 +2,6 @@
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
-
-import contextlib
 import copy
 import math
 import numpy as np
@@ -12,15 +10,13 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from tools import checkpoint_utils, utils
-import tasks
+from tools import utils
 
 from models import (
     FairseqEncoder,
     FairseqIncrementalDecoder,
     FairseqDecoder,
     FairseqEncoderDecoderModel,
-    BaseFairseqModel,
     register_model,
     register_model_architecture,
 )
@@ -504,9 +500,9 @@ class Assigner(FairseqEncoder):
         self.feature_extractor = Conv2DFeatureExtractionModel(
             dim_input=dim_input,
             conv_layers=assigner_conv_layers,
-            dropout=0.0,
+            dropout=0.1,
             mode=args.extractor_mode,
-            conv_bias=args.conv_bias,
+            conv_bias=True,
             output='same'
         )
         self.proj = Linear(self.embed, 1)

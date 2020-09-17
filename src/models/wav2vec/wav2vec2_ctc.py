@@ -4,7 +4,6 @@
 # LICENSE file in the root directory of this source tree.
 
 import contextlib
-
 import torch
 import torch.nn as nn
 
@@ -223,7 +222,7 @@ class Wav2VecEncoder(FairseqEncoder):
         super().__init__(task.source_dictionary)
 
         d = w2v_args.encoder_embed_dim
-
+        self.d = d
         self.w2v_model = model
 
         self.final_dropout = nn.Dropout(args.final_dropout)
@@ -232,8 +231,6 @@ class Wav2VecEncoder(FairseqEncoder):
 
         if tgt_dict is not None:
             self.proj = Linear(d, len(tgt_dict))
-        elif getattr(args, 'decoder_embed_dim', d) != d:
-            self.proj = Linear(d, args.decoder_embed_dim)
         else:
             self.proj = None
 
@@ -254,7 +251,6 @@ class Wav2VecEncoder(FairseqEncoder):
 
         with torch.no_grad() if not ft else contextlib.ExitStack():
             x, padding_mask = self.w2v_model.extract_features(**w2v_args)
-
             if tbc:
                 # B x T x C -> T x B x C
                 x = x.transpose(0, 1)
@@ -264,8 +260,13 @@ class Wav2VecEncoder(FairseqEncoder):
         if self.proj:
             x = self.proj(x)
 
+        if tbc:
+            x = x * (~padding_mask.transpose(0,1)).unsqueeze(-1)
+        else:
+            x = x * (~padding_mask).unsqueeze(-1)
+
         return {
-            "encoder_out": x,  # T x B x C
+            "encoder_out": x,
             "encoder_padding_mask": padding_mask,  # B x T
             "padding_mask": padding_mask,
         }

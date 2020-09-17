@@ -2,8 +2,6 @@
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
-
-import contextlib
 import copy
 import math
 import numpy as np
@@ -12,15 +10,13 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from tools import checkpoint_utils, utils
-import tasks
+from tools import utils
 
 from models import (
     FairseqEncoder,
     FairseqIncrementalDecoder,
     FairseqDecoder,
     FairseqEncoderDecoderModel,
-    BaseFairseqModel,
     register_model,
     register_model_architecture,
 )
@@ -200,7 +196,6 @@ class CIFModel(TransformerModel):
         #     return emb
 
         encoder = cls.build_encoder(args)
-        import pdb; pdb.set_trace()
         assigner = cls.build_assigner(args, encoder.d)
         decoder = cls.build_decoder(args, tgt_dict, encoder.d)
         return CIFModel(args, encoder, assigner, decoder)
@@ -216,18 +211,18 @@ class CIFModel(TransformerModel):
     def forward(self, **kwargs):
         encoder_out = self.encoder(tbc=False, **kwargs)
         alphas = self.assigner(encoder_out)
-        if self.training:
-            print('train mode forward')
-            _alphas = self.resize(alphas, kwargs['target_lengths'])
-        else:
-            print('eval mode forward')
-            _alphas = alphas
+        _alphas, num_output = self.resize(alphas, kwargs['target_lengths'])
+        # if self.training:
+        #     _alphas = self.resize(alphas, kwargs['target_lengths'])
+        # else:
+        #     print('eval mode forward')
+        #     _alphas = alphas
         cif_outputs = self.cif(encoder_out, _alphas)
-        decoder_out = self.decoder(encoder_out=cif_outputs, **kwargs)
+        logits = self.decoder(cif_outputs)
+        return {'logits': logits, 'num_output': num_output}
 
-        return decoder_out
-
-    def cif(self, hidden, alphas, threshold=0.95, log=False):
+    def cif(self, encoder_out, alphas, threshold=0.95, log=False):
+        hidden = encoder_out['encoder_out']
         device = hidden.device
         batch_size, len_time, hidden_size = hidden.size()
 
@@ -281,14 +276,15 @@ class CIFModel(TransformerModel):
 
     @staticmethod
     def resize(alphas, target_lengths):
+        device = alphas.device
         # sum
         _num = alphas.sum(-1)
         # scaling
         num = target_lengths.float()
-        num_noise = num + 0.9 * torch.rand(alphas.size(0)) - 0.45
+        num_noise = num + 0.9 * torch.rand(alphas.size(0)).to(device) - 0.45
         alphas *= (num_noise / _num)[:, None].repeat(1, alphas.size(1))
 
-        return alphas
+        return alphas, _num
 
 
 class TransformerDecoder(FairseqIncrementalDecoder):
@@ -504,9 +500,10 @@ class Assigner(FairseqEncoder):
         self.feature_extractor = Conv2DFeatureExtractionModel(
             dim_input=dim_input,
             conv_layers=assigner_conv_layers,
-            dropout=0.0,
+            dropout=0.1,
             mode=args.extractor_mode,
-            conv_bias=args.conv_bias,
+            conv_bias=True,
+            output='same'
         )
         self.proj = Linear(self.embed, 1)
 
@@ -521,10 +518,11 @@ class Assigner(FairseqEncoder):
             the decoder's output of shape `(batch, src_len)`
         """
         encoded, padding_mask = encoder_out['encoder_out'], encoder_out['padding_mask']
-        import pdb; pdb.set_trace()
-        encoded = encoded * padding_mask.unsqueeze(-1)
+
         x = self.feature_extractor(encoded)
         x = self.proj(x)[:, :, 0]
+        x = torch.sigmoid(x)
+        x = x * (~padding_mask)
 
         return x
 
@@ -544,8 +542,7 @@ class FCDecoder(FairseqDecoder):
 
     def __init__(self, args, dictionary, input_dim):
         super().__init__(dictionary)
-        self.embed_out = nn.Parameter(torch.Tensor(len(dictionary), input_dim))
-        nn.init.normal_(self.embed_out, mean=0, std=input_dim ** -0.5)
+        self.proj = Linear(input_dim, len(dictionary))
 
     def forward(self, encoded):
         """
@@ -556,13 +553,8 @@ class FCDecoder(FairseqDecoder):
             tuple:
                 - the decoder's output of shape `(batch, tgt_len, vocab)`
         """
-        x = self.output_layer(encoded)
+        x = self.proj(encoded)
         return x
-
-    def output_layer(self, features, **kwargs):
-        """Project features to the vocabulary size."""
-
-        return F.linear(features, self.embed_out)
 
 
 class Conv2DFeatureExtractionModel(nn.Module):
@@ -573,9 +565,12 @@ class Conv2DFeatureExtractionModel(nn.Module):
         dropout: float = 0.0,
         mode: str = "default",
         conv_bias: bool = False,
+        output: str = "valid", # ["valid", "same"]
     ):
         super().__init__()
         assert mode in {"default", "layer_norm"}
+        assert output in {"valid", "same"}
+        self.output = output
 
         def block(n_in, n_out, k, stride, is_layer_norm=False, is_group_norm=False, conv_bias=False):
             def make_conv():
@@ -623,14 +618,18 @@ class Conv2DFeatureExtractionModel(nn.Module):
             in_d = dim
 
     def forward(self, x):
-        if x.ndim == 2: # BxT -> BxCxT
-            x = x.unsqueeze(1)
-        elif x.ndim == 3: #BxTxC -> BxCxT
-            x = x.transpose(1,2)
-        else:
-            raise NotImplementedError('error input ndim')
+        if self.output == 'same':
+            length = x.size(1)
+            x = F.pad(x, [0,0,0,20,0,0])
+        x = x.transpose(1,2)
+
         for conv in self.conv_layers:
             x = conv(x)
+
+        x = x.transpose(1,2)
+
+        if self.output == 'same':
+            x = x[:, :length, :]
 
         return x
 
@@ -656,7 +655,6 @@ def seq2seq_architecture(args):
     args.decoder_attention_dropout = getattr(args, "decoder_attention_dropout", 0)
     args.decoder_activation_dropout = getattr(args, "decoder_activation_dropout", 0)
     args.share_decoder_input_output_embed = getattr(args, "share_decoder_input_output_embed", False)
-
     base_architecture(args)
 
 

@@ -7,6 +7,7 @@
 
 import os
 import sys
+import torch
 
 from dataload import FileAudioDataset, Dictionary, AddTargetDataset
 from . import FairseqTask, register_task
@@ -112,8 +113,8 @@ class AudioPretrainingTask(FairseqTask):
             self.datasets[split] = AddTargetDataset(
                 self.datasets[split],
                 labels,
-                pad=self.target_dictionary.pad(),
                 bos=self.target_dictionary.bos(),
+                pad=self.target_dictionary.pad(),
                 eos=self.target_dictionary.eos(),
                 batch_targets=True,
                 process_label=process_label,
@@ -143,3 +144,50 @@ class AudioPretrainingTask(FairseqTask):
     ):
         # we do not need to filter by size in this task as dataloaders take care of this
         return indices
+
+
+@register_task("audio_cif_pretraining")
+class AudioCIFPretrainingTask(AudioPretrainingTask):
+
+    def __init__(self, args, source_dictionary=None):
+        super().__init__(args)
+        self._target_dictionary = None
+        self._source_dictionary = source_dictionary
+
+    def load_dataset(self, split, **kwargs):
+        """Load a given dataset split.
+
+        Args:
+            split (str): name of the split (e.g., train, valid, test)
+        """
+        manifest = os.path.join(self.args.data, "{}.tsv".format(split))
+        self.datasets[split] = FileAudioDataset(
+            manifest,
+            sample_rate=self.args.sample_rate,
+            max_sample_size=self.args.max_sample_size,
+            min_sample_size=self.args.max_sample_size,
+            min_length=self.args.min_sample_size,
+            pad=self.args.labels is not None or self.args.enable_padding,
+            normalize=self.args.normalize,
+        )
+
+        dict_path = os.path.join(self.args.data, f"dict.{self.args.labels}.txt")
+        self._target_dictionary = Dictionary.load(dict_path)
+        label_path = os.path.join(self.args.data, f"{split}.{self.args.labels}")
+        labels = []
+        with open(label_path, "r") as f:
+            for line in f:
+                labels.append(line)
+
+        process_label = LabelEncoder(self.target_dictionary)
+
+        self.datasets[split] = AddTargetDataset(
+            self.datasets[split],
+            labels,
+            bos=self.target_dictionary.bos(),
+            pad=self.target_dictionary.pad(),
+            eos=None,
+            batch_targets=True,
+            process_label=process_label,
+            add_to_input=False,
+        )

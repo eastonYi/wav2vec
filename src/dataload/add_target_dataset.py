@@ -42,10 +42,19 @@ class AddTargetDataset(BaseWrapperDataset):
         indices = set(collated["id"].tolist())
 
         if self.add_to_input:
-            eos = torch.ones([1]).int() * self.eos
-            target = [torch.cat([s["label"], eos], dim=-1) for s in samples if s["id"] in indices]
-            bos = torch.ones([1]).int() * self.bos
-            prev_output_tokens = [torch.cat([bos, s["label"]], dim=-1) for s in samples if s["id"] in indices]
+            if self.eos:
+                eos = torch.ones([1]).int() * self.eos
+                target = [torch.cat([s["label"], eos], dim=-1) for s in samples if s["id"] in indices]
+                bos = torch.ones([1]).int() * self.bos
+                prev_output_tokens = [torch.cat([bos, s["label"]], dim=-1) for s in samples if s["id"] in indices]
+                collated["net_input"]["prev_output_tokens"] = \
+                    data_utils.collate_tokens(prev_output_tokens, pad_idx=self.pad, left_pad=False)
+            else:
+                target = [s["label"] for s in samples if s["id"] in indices]
+                # bos = torch.ones([1]).int() * self.bos
+                # prev_output_tokens = [torch.cat([bos, s["label"][:-1]], dim=-1) for s in samples if s["id"] in indices]
+                # collated["net_input"]["prev_output_tokens"] = \
+                #     data_utils.collate_tokens(prev_output_tokens, pad_idx=self.pad, left_pad=False)
         else:
             target = [s["label"] for s in samples if s["id"] in indices]
 
@@ -54,9 +63,5 @@ class AddTargetDataset(BaseWrapperDataset):
         target = data_utils.collate_tokens(target, pad_idx=self.pad, left_pad=False)
         collated["ntokens"] = collated["target_lengths"].sum().item()
         collated["target"] = target
-
-        if self.add_to_input:
-            collated["net_input"]["prev_output_tokens"] = \
-                data_utils.collate_tokens(prev_output_tokens, pad_idx=self.pad, left_pad=False)
 
         return collated

@@ -483,8 +483,6 @@ class BackgroundConsumer(Thread):
         except Exception as e:
             self._queue.put(e)
 
-        del self._source_iter
-
 
 class BufferedIterator(object):
     def __init__(self, size, iterable):

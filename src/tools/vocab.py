@@ -20,8 +20,8 @@ def make_vocab(fpaths, fname):
     for fpath in fpaths.split(','):
         with open(fpath, encoding='utf-8') as f:
             for l in f:
-                # words = l.strip().split()
-                words = l.strip().split()[1:]
+                words = l.strip().split()
+                # words = l.strip().split()[1:]
                 # words = l.strip().split(',')[1].split()
                 word2cnt.update(Counter(words))
     with open(fname, 'w', encoding='utf-8') as fout:

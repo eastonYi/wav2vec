@@ -20,9 +20,7 @@ class CTCDecoder(object):
         self.nbest = args.nbest
         self.beam = args.beam
         self.blank = (
-            tgt_dict.index("<ctc_blank>")
-            if "<ctc_blank>" in tgt_dict.indices
-            else tgt_dict.bos()
+            tgt_dict.index("<ctc_blank>") if "<ctc_blank>" in tgt_dict.indices else tgt_dict.bos()
         )
 
         self.decode_fn = CTCBeamDecoder(tgt_dict.symbols,

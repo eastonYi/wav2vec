@@ -652,7 +652,7 @@ def seq2seq_architecture(args):
     args.decoder_normalize_before = getattr(args, "decoder_normalize_before", False)
     args.no_token_positional_embeddings = getattr(args, "no_token_positional_embeddings", False)
     args.decoder_dropout = getattr(args, "decoder_dropout", 0)
-    args.decoder_attention_dropout = getattr(args, "decoder_attention_dropout", 0)
+    args.decoder_attention_dropout = getattr(args, "share-decoder-input-output-embed", 0)
     args.decoder_activation_dropout = getattr(args, "decoder_activation_dropout", 0)
     args.share_decoder_input_output_embed = getattr(args, "share_decoder_input_output_embed", False)
     base_architecture(args)

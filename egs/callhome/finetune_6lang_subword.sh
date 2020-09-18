@@ -1,7 +1,7 @@
 . ./path.sh
 
 gpu=$1
-SAVE_DIR=exp/finetune_6lang_subword
+SAVE_DIR=exp/finetune_6lang_subword_2
 W2V_PATH=../libri/exp/wav2vec2_small.pt
 DATA_DIR=data/6lang_subword
 label_type=subword

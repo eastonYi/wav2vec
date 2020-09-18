@@ -1,10 +1,10 @@
 . ./path.sh
 
 gpu=$1
-SAVE_DIR=exp/finetune_ja_char
+SAVE_DIR=exp/finetune_en_subword
 W2V_PATH=exp/pretrain_6lang/checkpoint_best.pt
-DATA_DIR=data/ja/char
-label_type=char
+DATA_DIR=data/en/subword
+label_type=subword
 
 TOKENIZERS_PARALLELISM=false CUDA_VISIBLE_DEVICES=$gpu python $SRC_ROOT/train.py $DATA_DIR \
 --save-dir $SAVE_DIR --tensorboard-logdir $SAVE_DIR --post-process $label_type \

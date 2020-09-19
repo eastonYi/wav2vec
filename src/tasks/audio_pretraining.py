@@ -113,12 +113,11 @@ class AudioPretrainingTask(FairseqTask):
             self.datasets[split] = AddTargetDataset(
                 self.datasets[split],
                 labels,
-                bos=self.target_dictionary.bos(),
                 pad=self.target_dictionary.pad(),
-                eos=self.target_dictionary.eos(),
+                bos=None if self.is_ctc else self.target_dictionary.bos(),
+                eos=None if self.is_ctc else self.target_dictionary.eos(),
                 batch_targets=True,
-                process_label=process_label,
-                add_to_input=not self.is_ctc,
+                process_label=process_label
             )
 
     @property

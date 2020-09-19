@@ -194,7 +194,6 @@ def load_models_and_criterions(filenames, data_path, arg_overrides=None, task=No
             if not os.path.exists(filename):
                 raise IOError("Model file not found: {}".format(filename))
             state = checkpoint_utils.load_checkpoint_to_cpu(filename, arg_overrides)
-            # state["args"].w2v_path = '/home/easton/projects/wav2vec/egs/libri/exp/wav2vec2_small.pt'
         else:
             state = model_state
 
@@ -398,9 +397,7 @@ def main(args, task=None, model_state=None):
                 # id = task.dataset(args.gen_subset).ids[int(sample_id)]
                 id = sample_id
                 toks = sample["target"][i, :] if 'target_label' not in sample else sample["target_label"][i, :]
-                target_tokens = (
-                    utils.strip_pad(toks, tgt_dict.pad()).int().cpu()
-                )
+                target_tokens = (utils.strip_pad(toks, tgt_dict.pad()).int().cpu())
                 # Process top predictions
                 errs, length = process_predictions(
                     args, hypos[i], None, tgt_dict, target_tokens, res_files, speaker, id, labels

@@ -16,14 +16,11 @@ from criterions import FairseqCriterion, register_criterion
 from loggings.meters import safe_round
 
 
-hyp_file = open('hyp', 'w')
-num = 0
-
-@register_criterion("ctc")
-class CtcCriterion(FairseqCriterion):
-    def __init__(self, task, wer_args, zero_infinity, sentence_avg, remove_bpe):
+@register_criterion("ctc_ce")
+class CtcCeCriterion(FairseqCriterion):
+    def __init__(self, task, wer_args, zero_infinity, remove_bpe):
         super().__init__(task)
-        self.blank_idx = task.target_dictionary.bos()
+        self.blk_idx = task.target_dictionary.blk()
         self.pad_idx = task.target_dictionary.pad()
         self.eos_idx = task.target_dictionary.eos()
         self.post_process = remove_bpe if remove_bpe else "letter"
@@ -51,7 +48,6 @@ class CtcCriterion(FairseqCriterion):
             self.w2l_decoder = None
 
         self.zero_infinity = zero_infinity
-        self.sentence_avg = sentence_avg
 
     @staticmethod
     def add_args(parser):
@@ -100,7 +96,7 @@ class CtcCriterion(FairseqCriterion):
                 targets_flat,
                 input_lengths,
                 target_lengths,
-                blank=self.blank_idx,
+                blank=self.blk_idx,
                 reduction="sum",
                 zero_infinity=self.zero_infinity,
             )
@@ -118,8 +114,8 @@ class CtcCriterion(FairseqCriterion):
         }
 
         if not model.training:
-            global num, hyp_file
             import editdistance
+
             with torch.no_grad():
                 lprobs_t = lprobs.transpose(0, 1).float().cpu()
 
@@ -128,11 +124,12 @@ class CtcCriterion(FairseqCriterion):
                 w_errs = 0
                 w_len = 0
                 wv_errs = 0
-                for lp, t, inp_l, id in zip(
+                for lp, t, inp_l in zip(
                     lprobs_t,
-                    sample["target_label"] if "target_label" in sample else sample["target"],
+                    sample["target_label"]
+                    if "target_label" in sample
+                    else sample["target"],
                     input_lengths,
-                    sample["id"]
                 ):
                     lp = lp[:inp_l].unsqueeze(0)
 
@@ -156,7 +153,7 @@ class CtcCriterion(FairseqCriterion):
                     targ_units_arr = targ.tolist()
 
                     toks = lp.argmax(dim=-1).unique_consecutive()
-                    pred_units_arr = toks[toks != self.blank_idx].tolist()
+                    pred_units_arr = toks[toks != self.blk_idx].tolist()
 
                     c_err += editdistance.eval(pred_units_arr, targ_units_arr)
                     c_len += len(targ_units_arr)
@@ -165,9 +162,6 @@ class CtcCriterion(FairseqCriterion):
 
                     pred_units = self.task.target_dictionary.string(pred_units_arr)
                     pred_words_raw = post_process(pred_units, self.post_process).split()
-                    hyp_file.write(pred_units + ' (None-{})\n'.format(id.tolist()))
-                    # print(pred_units + ' (None-{})'.format(id.tolist()))
-                    num += 1
 
                     if decoded is not None and "words" in decoded:
                         pred_words = decoded["words"]
@@ -186,9 +180,6 @@ class CtcCriterion(FairseqCriterion):
                 logging_output["c_errors"] = c_err
                 logging_output["c_total"] = c_len
 
-            if num > 3370:
-                hyp_file.close()
-            # print(num)
         return loss, sample_size, logging_output
 
     @staticmethod

@@ -24,7 +24,6 @@ class CTCDecoder(object):
             if "<ctc_blank>" in tgt_dict.indices
             else tgt_dict.bos()
         )
-
         self.decode_fn = CTCBeamDecoder(tgt_dict.symbols,
                                          beam_width=self.beam,
                                          blank_id=self.blank,
@@ -37,17 +36,18 @@ class CTCDecoder(object):
         encoder_input = {
             k: v for k, v in sample["net_input"].items() if k != "prev_output_tokens"
         }
-        emissions = self.get_emissions(models, encoder_input)
+        emissions, seq_lens = self.get_emissions(models, encoder_input)
 
-        return self.decode(emissions)
+        return self.decode(emissions, seq_lens)
 
     def get_emissions(self, models, encoder_input):
         """Run encoder and normalize emissions"""
         # encoder_out = models[0].encoder(**encoder_input)
         encoder_out = models[0](**encoder_input)
         emissions = models[0].get_normalized_probs(encoder_out, log_probs=False)
+        seq_lens = (~encoder_out['encoder_padding_mask']).sum(-1)
 
-        return emissions.transpose(0, 1)
+        return emissions.transpose(0, 1), seq_lens
 
     def get_tokens(self, idxs):
         """Normalize tokens by handling CTC blank, ASG replabels, etc."""
@@ -56,9 +56,10 @@ class CTCDecoder(object):
 
         return torch.LongTensor(list(idxs))
 
-    def decode(self, emissions):
+    def decode(self, emissions, seq_lens):
         hypos = []
-        beam_results, beam_scores, timesteps, out_seq_len = self.decode_fn.decode(emissions)
+
+        beam_results, beam_scores, timesteps, out_seq_len = self.decode_fn.decode(emissions, seq_lens)
         for beam_result, scores, lengthes in zip(beam_results, beam_scores, out_seq_len):
             # beam_ids: beam x id; score: beam; length: beam
             top = []

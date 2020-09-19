@@ -166,9 +166,11 @@ class Wav2VecCtc(BaseFairseqModel):
 
         logits = net_output["encoder_out"]
         if log_probs:
-            return utils.log_softmax(logits.float(), dim=-1)
+            res = utils.log_softmax(logits.float(), dim=-1)
         else:
-            return utils.softmax(logits.float(), dim=-1)
+            res = utils.softmax(logits.float(), dim=-1)
+
+        return res
 
     def forward(self, **kwargs):
         x = self.w2v_encoder(**kwargs)
@@ -197,6 +199,7 @@ class Wav2VecEncoder(FairseqEncoder):
             "feature_grad_mult": args.feature_grad_mult,
         }
         if getattr(args, "w2v_args", None) is None:
+            args.w2v_path = '../libri/wav2vec2_small.pt'
             print('load Wav2VecEncoder from {}'.format(args.w2v_path))
             state = checkpoint_utils.load_checkpoint_to_cpu(
                 args.w2v_path, arg_overrides

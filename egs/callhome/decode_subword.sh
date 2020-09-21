@@ -1,4 +1,4 @@
-. path.sh
+. ../path.sh
 
 gpu=$2
 data=$1

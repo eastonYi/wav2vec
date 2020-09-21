@@ -20,32 +20,10 @@ from loggings.meters import safe_round
 class CtcCriterion(FairseqCriterion):
     def __init__(self, task, wer_args, zero_infinity, sentence_avg, remove_bpe):
         super().__init__(task)
-        self.blank_idx = task.target_dictionary.bos()
-        self.pad_idx = task.target_dictionary.pad()
-        self.eos_idx = task.target_dictionary.eos()
+        self.blk_idx = task.dictionary.index("<ctc_blank>")
+        self.pad_idx = task.dictionary.pad()
+        self.eos_idx = task.dictionary.eos()
         self.post_process = remove_bpe if remove_bpe else "letter"
-
-        if wer_args is not None:
-            from examples.speech_recognition.w2l_decoder import W2lKenLMDecoder
-
-            wer_compute_kenlm, wer_lexicon, lm_w, ws_w = eval(wer_args)
-
-            dec_args = Namespace()
-            dec_args.nbest = 1
-            dec_args.criterion = "ctc"
-            dec_args.kenlm_model = wer_compute_kenlm
-            dec_args.lexicon = wer_lexicon
-            dec_args.beam = 50
-            dec_args.beam_size_token = min(50, len(task.target_dictionary))
-            dec_args.beam_threshold = min(50, len(task.target_dictionary))
-            dec_args.lm_weight = lm_w
-            dec_args.word_score = ws_w
-            dec_args.unk_weight = -math.inf
-            dec_args.sil_weight = 0
-
-            self.w2l_decoder = W2lKenLMDecoder(dec_args, task.target_dictionary)
-        else:
-            self.w2l_decoder = None
 
         self.zero_infinity = zero_infinity
         self.sentence_avg = sentence_avg
@@ -65,13 +43,6 @@ class CtcCriterion(FairseqCriterion):
             )
         except:
             pass  # this option might have been added from eval args
-        parser.add_argument(
-            "--wer-args",
-            type=str,
-            default=None,
-            help="options for wer computation on valid set using 4 gram lm. this should be a tuple of 4 elements: path to 4-gram lm, \
-            path to lexicon, lm score, word score",
-        )
 
     def forward(self, model, sample, reduce=True):
         net_output = model(**sample["net_input"])
@@ -146,11 +117,11 @@ class CtcCriterion(FairseqCriterion):
                             else:
                                 decoded = decoded[0]
 
-                    p = (t != self.task.target_dictionary.pad()) & (
-                        t != self.task.target_dictionary.eos()
+                    p = (t != self.task.dictionary.pad()) & (
+                        t != self.task.dictionary.eos()
                     )
                     targ = t[p]
-                    targ_units = self.task.target_dictionary.string(targ)
+                    targ_units = self.task.dictionary.string(targ)
                     targ_units_arr = targ.tolist()
 
                     toks = lp.argmax(dim=-1).unique_consecutive()
@@ -161,7 +132,7 @@ class CtcCriterion(FairseqCriterion):
 
                     targ_words = post_process(targ_units, self.post_process).split()
 
-                    pred_units = self.task.target_dictionary.string(pred_units_arr)
+                    pred_units = self.task.dictionary.string(pred_units_arr)
                     pred_words_raw = post_process(pred_units, self.post_process).split()
 
                     if decoded is not None and "words" in decoded:

@@ -258,21 +258,34 @@ class Wav2VecEncoder(FairseqEncoder):
                 # B x T x C -> T x B x C
                 x = x.transpose(0, 1)
 
-        x = self.final_dropout(x)
-
-        if self.proj:
-            x = self.proj(x)
+        encoded = self.final_dropout(x)
 
         if tbc:
-            x = x * (~padding_mask.transpose(0,1)).unsqueeze(-1)
+            encoded = encoded * (~padding_mask.transpose(0,1)).unsqueeze(-1)
         else:
-            x = x * (~padding_mask).unsqueeze(-1)
+            encoded = encoded * (~padding_mask).unsqueeze(-1)
 
-        return {
-            "encoder_out": x,
+        res = {
+            "encoder_out": encoded,
             "encoder_padding_mask": padding_mask,  # B x T
             "padding_mask": padding_mask,
         }
+
+        if self.proj:
+            x = self.proj(encoded)
+
+            if tbc:
+                x = x * (~padding_mask.transpose(0,1)).unsqueeze(-1)
+            else:
+                x = x * (~padding_mask).unsqueeze(-1)
+
+            res = {
+                "encoder_out": x,
+                "encoded": encoded,
+                "encoder_padding_mask": padding_mask,  # B x T
+                "padding_mask": padding_mask,
+            }
+        return res
 
     def reorder_encoder_out(self, encoder_out, new_order):
         if encoder_out["encoder_out"] is not None:

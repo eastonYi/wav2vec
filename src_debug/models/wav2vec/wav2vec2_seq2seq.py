@@ -161,6 +161,63 @@ class TransformerModel(FairseqEncoderDecoderModel):
         return res
 
 
+@register_model("wav2vec_ctc_seq2seq")
+class TransformerCTCModel(TransformerModel):
+
+    @classmethod
+    def build_model(cls, args, task):
+        """Build a new model instance."""
+
+        # make sure all arguments are present in older models
+        seq2seq_architecture(args)
+
+        if not hasattr(args, "max_source_positions"):
+            args.max_source_positions = 2048
+        if not hasattr(args, "max_target_positions"):
+            args.max_target_positions = 2048
+
+        src_dict, tgt_dict = task.source_dictionary, task.target_dictionary
+
+        def build_embedding(dictionary, embed_dim):
+            num_embeddings = len(dictionary)
+            padding_idx = dictionary.pad()
+            emb = Embedding(num_embeddings, embed_dim, padding_idx)
+            return emb
+
+        decoder_embed_tokens = build_embedding(tgt_dict, args.decoder_embed_dim)
+
+        encoder = cls.build_encoder(args, tgt_dict)
+        decoder = cls.build_decoder(args, tgt_dict, decoder_embed_tokens)
+        return TransformerModel(args, encoder, decoder)
+
+    @classmethod
+    def build_encoder(cls, args, tgt_dict):
+        return Wav2VecEncoder(args, tgt_dict)
+
+    def forward(self, **kwargs):
+        encoder_out = self.encoder(tbc=False, **kwargs)
+        ctc_logits = encoder_out["encoder_out"]
+        encoder_out["encoder_out"] = encoder_out["encoded"]
+        logits, _ = self.decoder(encoder_out=encoder_out, **kwargs)
+        encoder_out["ctc_logits"] = ctc_logits
+
+        return encoder_out, logits
+
+    def get_normalized_probs(self, ctc_logits, logits, log_probs):
+        """Get normalized probabilities (or log probs) from a net's output."""
+
+        if log_probs:
+            ctc_res = utils.log_softmax(ctc_logits.float(), dim=-1)
+            res = utils.log_softmax(logits.float(), dim=-1)
+        else:
+            ctc_res = utils.softmax(ctc_logits.float(), dim=-1)
+            res = utils.softmax(logits.float(), dim=-1)
+        ctc_res.batch_first = True
+        res.batch_first = True
+
+        return ctc_res, res
+
+
 @register_model("wav2vec_cif")
 class CIFModel(TransformerModel):
     def __init__(self, args, encoder, assigner, decoder):
@@ -652,7 +709,7 @@ def seq2seq_architecture(args):
     args.decoder_normalize_before = getattr(args, "decoder_normalize_before", False)
     args.no_token_positional_embeddings = getattr(args, "no_token_positional_embeddings", False)
     args.decoder_dropout = getattr(args, "decoder_dropout", 0)
-    args.decoder_attention_dropout = getattr(args, "decoder_attention_dropout", 0)
+    args.decoder_attention_dropout = getattr(args, "share-decoder-input-output-embed", 0)
     args.decoder_activation_dropout = getattr(args, "decoder_activation_dropout", 0)
     args.share_decoder_input_output_embed = getattr(args, "share_decoder_input_output_embed", False)
     base_architecture(args)

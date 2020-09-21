@@ -16,9 +16,6 @@ from criterions import FairseqCriterion, register_criterion
 from loggings.meters import safe_round
 
 
-hyp_file = open('hyp', 'w')
-num = 0
-
 @register_criterion("ctc")
 class CtcCriterion(FairseqCriterion):
     def __init__(self, task, wer_args, zero_infinity, sentence_avg, remove_bpe):
@@ -118,7 +115,6 @@ class CtcCriterion(FairseqCriterion):
         }
 
         if not model.training:
-            global num, hyp_file
             import editdistance
             with torch.no_grad():
                 lprobs_t = lprobs.transpose(0, 1).float().cpu()
@@ -165,9 +161,6 @@ class CtcCriterion(FairseqCriterion):
 
                     pred_units = self.task.target_dictionary.string(pred_units_arr)
                     pred_words_raw = post_process(pred_units, self.post_process).split()
-                    hyp_file.write(pred_units + ' (None-{})\n'.format(id.tolist()))
-                    # print(pred_units + ' (None-{})'.format(id.tolist()))
-                    num += 1
 
                     if decoded is not None and "words" in decoded:
                         pred_words = decoded["words"]
@@ -186,9 +179,6 @@ class CtcCriterion(FairseqCriterion):
                 logging_output["c_errors"] = c_err
                 logging_output["c_total"] = c_len
 
-            if num > 3370:
-                hyp_file.close()
-            # print(num)
         return loss, sample_size, logging_output
 
     @staticmethod

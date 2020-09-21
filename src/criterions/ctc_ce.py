@@ -18,14 +18,12 @@ from loggings.meters import safe_round
 
 @register_criterion("ctc_ce")
 class CtcCeCriterion(FairseqCriterion):
-    def __init__(self, task, wer_args, zero_infinity, remove_bpe):
+    def __init__(self, task, sentence_avg):
         super().__init__(task)
-        self.blk_idx = task.dictionary.index("<ctc_blank>")
-        self.pad_idx = task.dictionary.pad()
-        self.bos_idx = task.dictionary.bos()
-        self.eos_idx = task.dictionary.eos()
-        self.post_process = remove_bpe if remove_bpe else "letter"
-        self.zero_infinity = zero_infinity
+        self.blk_idx = task.target_dictionary.index("<ctc_blank>")
+        self.pad_idx = task.target_dictionary.pad()
+        self.bos_idx = task.target_dictionary.bos()
+        self.eos_idx = task.target_dictionary.eos()
 
     @staticmethod
     def add_args(parser):
@@ -45,9 +43,10 @@ class CtcCeCriterion(FairseqCriterion):
 
     def forward(self, model, sample, reduce=True):
         encoder_output, logits = model(**sample["net_input"])
+        
         # (B, T, C) from the encoder
         ctc_logits = encoder_output["ctc_logits"]
-        ctc_lprobs, lprobs = model.get_normalized_probs(ctc_logits, logits, log_probs=True).contiguous()
+        ctc_lprobs, lprobs = model.get_normalized_probs(ctc_logits, logits, log_probs=True)
 
         len_ctc_logits = (~encoder_output["padding_mask"]).long().sum(-1)
         target = sample["target"]
@@ -78,8 +77,8 @@ class CtcCeCriterion(FairseqCriterion):
 
             c_err, c_len = self.ctc_greedy_eval(
                 ctc_lprobs, len_ctc_logits, target,
-                pad_idx=self.dictionary.pad(),
-                eos_idx=self.dictionary.eos(),
+                pad_idx=self.pad_idx,
+                eos_idx=self.eos_idx,
                 blk_idx=self.blk_idx)
 
             logging_output["c_errors"] = c_err
@@ -128,14 +127,14 @@ class CtcCeCriterion(FairseqCriterion):
                 target_lengths,
                 blank=self.blk_idx,
                 reduction="sum",
-                zero_infinity=self.zero_infinity,
+                zero_infinity=True,
             )
 
         return loss
 
     def ce_loss(self, lprobs, target):
         # N, T -> N * T
-        target = target.view(-1)
+        target = target.view(-1).long()
 
         # N, T, D -> N * T, D
         lprobs = lprobs.view(-1, lprobs.size(-1))

@@ -32,7 +32,6 @@ class AudioCtcTask(AudioUnsuperviseTrainingTask):
         parser.add_argument(
             "--labels",
             type=str,
-            default=None,
             help="extension of the label file to load, if any",
         )
         AudioUnsuperviseTrainingTask.add_args(parser)
@@ -40,6 +39,18 @@ class AudioCtcTask(AudioUnsuperviseTrainingTask):
     def __init__(self, args, dictionary):
         super().__init__(args)
         self.dictionary = dictionary
+
+    @classmethod
+    def setup_task(cls, args, **kwargs):
+        """Setup the task (e.g., load dictionaries)."""
+        dict_path = os.path.join(args.data, f"dict.{args.labels}.txt")
+        if not os.path.isfile(dict_path):
+            raise FileNotFoundError("Dict not found: {}".format(dict_path))
+        tgt_dict = Dictionary.load(dict_path)
+        tgt_dict.add_symbol("<ctc_blank>")
+
+        print("| dictionary: {} types".format(len(tgt_dict)))
+        return cls(args, tgt_dict)
 
     def load_dataset(self, split, **kwargs):
         """Load a given dataset split.
@@ -49,8 +60,6 @@ class AudioCtcTask(AudioUnsuperviseTrainingTask):
         """
         AudioUnsuperviseTrainingTask.load_dataset(self, split, **kwargs)
 
-        dict_path = os.path.join(self.args.data, f"dict.{self.args.labels}.txt")
-        self.load_dict(dict_path)
         label_path = os.path.join(self.args.data, f"{split}.{self.args.labels}")
         labels = self.load_labels(label_path)
 
@@ -64,11 +73,7 @@ class AudioCtcTask(AudioUnsuperviseTrainingTask):
             eos=self.dictionary.eos(),
             batch_targets=True,
             process_label=process_label,
-            add_to_input=False,
         )
-
-    def load_dict(self, dict_path):
-        self.dictionary = Dictionary.load(dict_path)
 
     @staticmethod
     def load_labels(label_path):
@@ -101,8 +106,6 @@ class AudioCifTask(AudioCtcTask):
         """
         AudioUnsuperviseTrainingTask.load_dataset(self, split, **kwargs)
 
-        dict_path = os.path.join(self.args.data, f"dict.{self.args.labels}.txt")
-        self.load_dict(dict_path)
         label_path = os.path.join(self.args.data, f"{split}.{self.args.labels}")
         labels = self.load_labels(label_path)
 
@@ -111,8 +114,8 @@ class AudioCifTask(AudioCtcTask):
         self.datasets[split] = AddTargetDataset(
             self.datasets[split],
             labels,
-            bos=self.target_dictionary.bos(),
-            pad=self.target_dictionary.pad(),
+            bos=self.dictionary.bos(),
+            pad=self.dictionary.pad(),
             eos=None,
             batch_targets=True,
             process_label=process_label
@@ -130,8 +133,6 @@ class AudioCtcCeTask(AudioCtcTask):
         """
         AudioUnsuperviseTrainingTask.load_dataset(self, split, **kwargs)
 
-        dict_path = os.path.join(self.args.data, f"dict.{self.args.labels}.txt")
-        self.load_dict(dict_path)
         label_path = os.path.join(self.args.data, f"{split}.{self.args.labels}")
         labels = self.load_labels(label_path)
 
@@ -140,12 +141,11 @@ class AudioCtcCeTask(AudioCtcTask):
         self.datasets[split] = AddTargetDataset(
             self.datasets[split],
             labels,
-            bos=self.target_dictionary.bos(),
-            pad=self.target_dictionary.pad(),
+            bos=self.dictionary.bos(),
+            pad=self.dictionary.pad(),
             eos=None,
             batch_targets=True,
-            process_label=process_label,
-            add_to_input=False,
+            process_label=process_label
         )
 
 
@@ -156,7 +156,7 @@ class AudioGANTrainingTask(AudioCtcTask):
         # vocab
         dict_path = os.path.join(self.args.data, f"dict.{self.args.labels}.txt")
         self._target_dictionary = Dictionary.load(dict_path)
-        process_label = LabelEncoder(self.target_dictionary)
+        process_label = LabelEncoder(self.dictionary)
 
         split = split.split(',')
         if len(split) == 1:
@@ -180,8 +180,8 @@ class AudioGANTrainingTask(AudioCtcTask):
             self.datasets[split] = AddTargetDataset(
                 self.datasets[split],
                 labels,
-                pad=self.target_dictionary.pad(),
-                eos=self.target_dictionary.eos(),
+                pad=self.dictionary.pad(),
+                eos=self.dictionary.eos(),
                 batch_targets=True,
                 process_label=process_label,
                 add_to_input=not self.is_ctc)
@@ -226,8 +226,8 @@ class AudioGANTrainingTask(AudioCtcTask):
                 text,
                 self.datasets[train],
                 labels,
-                pad=self.target_dictionary.pad(),
-                eos=self.target_dictionary.eos(),
+                pad=self.dictionary.pad(),
+                eos=self.dictionary.eos(),
                 batch_targets=True,
                 process_label=process_label,
                 add_to_input=not self.is_ctc)
